@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  bareruby:
+    name: Release bareruby
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 4.0
+
+      - name: bundle install
+        run: bundle install
+        working-directory: gems/bareruby
+
+      - uses: rubygems/release-gem@v1
+        with:
+          working-directory: gems/bareruby
+
+  bareruby-compiler:
+    name: Release bareruby-compiler
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 4.0
+
+      - name: bundle install
+        run: bundle install
+        working-directory: gems/bareruby-compiler
+
+      - uses: rubygems/release-gem@v1
+        with:
+          working-directory: gems/bareruby-compiler
