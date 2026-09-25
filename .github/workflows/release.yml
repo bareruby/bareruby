@@ -6,8 +6,48 @@ on:
       - "v*"
 
 jobs:
+  verify-version:
+    name: Verify tag and gemspec versions
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 4.0
+
+      - name: Compare tag version with gemspec versions
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          status=0
+
+          bareruby_version=$(ruby -e 'puts Gem::Specification.load("gems/bareruby/bareruby.gemspec").version')
+          if [ "$bareruby_version" = "$tag_version" ]; then
+            echo "bareruby.gemspec: $bareruby_version"
+          else
+            echo "::error file=gems/bareruby/bareruby.gemspec::version $bareruby_version does not match tag $GITHUB_REF_NAME"
+            status=1
+          fi
+
+          compiler_version=$(ruby -e 'puts Gem::Specification.load("gems/bareruby-compiler/bareruby-compiler.gemspec").version')
+          if [ "$compiler_version" = "$tag_version" ]; then
+            echo "bareruby-compiler.gemspec: $compiler_version"
+          else
+            echo "::error file=gems/bareruby-compiler/bareruby-compiler.gemspec::version $compiler_version does not match tag $GITHUB_REF_NAME"
+            status=1
+          fi
+
+          exit "$status"
+
   bareruby:
     name: Release bareruby
+    needs: verify-version
     runs-on: ubuntu-latest
 
     permissions:
@@ -33,6 +73,7 @@ jobs:
 
   bareruby-compiler:
     name: Release bareruby-compiler
+    needs: verify-version
     runs-on: ubuntu-latest
 
     permissions:
