@@ -20,7 +20,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 4.0
+          ruby-version: "4.0"
 
       - name: Compare tag version with gemspec versions
         run: |
@@ -47,7 +47,7 @@ jobs:
 
   bareruby:
     name: Release bareruby
-    needs: verify-version
+    needs: [verify-version, bareruby-compiler]
     runs-on: ubuntu-latest
 
     permissions:
@@ -61,7 +61,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 4.0
+          ruby-version: "4.0"
 
       - name: bundle install
         run: bundle install
@@ -87,7 +87,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 4.0
+          ruby-version: "4.0"
 
       - name: bundle install
         run: bundle install
