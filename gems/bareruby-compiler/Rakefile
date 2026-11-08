@@ -7,8 +7,9 @@ RSpec::Core::RakeTask.new(:spec) do |task|
   task.exclude_pattern = "spec/core/**/*_spec.rb"
 end
 
-RSpec::Core::RakeTask.new(:core_test) do |task|
-  task.pattern = "spec/core/**/*_spec.rb"
+desc "Run the specs under spec/core in parallel"
+task :core_test do
+  sh "parallel_rspec", "spec/core"
 end
 
 require "rubocop/rake_task"
