@@ -3,11 +3,12 @@
 module BareRuby
   module Compiler
     class TypedAST
-      attr_reader :statements, :native_methods
+      attr_reader :statements, :native_methods, :functions
 
       def initialize
         @statements = []
         @native_methods = []
+        @functions = []
       end
 
       def add_statement(expression)
@@ -20,11 +21,32 @@ module BareRuby
         self
       end
 
+      def add_function(function)
+        @functions << function
+        self
+      end
+
+      def create_function(name, self_type, parameters)
+        { name:, self_type:, parameters:, body: [], return_type: :nil, allocates: nil }
+      end
+
       def create_native_row(function, parameters, returns) = { function:, parameters:, returns: }
 
       def create_native_call(namespace, row, arguments)
         build(:native_call, [namespace, row, arguments], row[:returns])
       end
+
+      def create_method_call(function, receiver, arguments)
+        build(:method_call, [function, receiver, arguments], function[:return_type])
+      end
+
+      def create_new_instance(class_name, initializer, arguments)
+        build(:new_instance, [initializer, arguments], [:instance, class_name])
+      end
+
+      def create_local(name, type) = build(:local, [name], type)
+
+      def create_class_reference(name) = build(:class_reference, [name], [:class, name])
 
       def create_boolean(value) = build(:boolean, [value], :Bool)
 

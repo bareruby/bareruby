@@ -3,10 +3,11 @@
 module BareRuby
   module Compiler
     class LIR
-      attr_reader :headers, :functions, :native_sources
+      attr_reader :headers, :structs, :functions, :native_sources
 
       def initialize
         @headers = []
+        @structs = []
         @functions = []
         @native_sources = []
       end
@@ -16,8 +17,13 @@ module BareRuby
         self
       end
 
-      def add_function(name, return_type, body)
-        @functions << { name:, return_type:, body: }
+      def add_struct(namespaces, name)
+        @structs << { namespaces:, name: }
+        self
+      end
+
+      def add_function(name, return_type, parameters, body)
+        @functions << { name:, return_type:, parameters:, body: }
         self
       end
 
@@ -31,6 +37,12 @@ module BareRuby
       def create_call(function, arguments) = { kind: :call, function:, arguments: }
 
       def create_literal(text) = { kind: :literal, text: }
+
+      def create_address(name) = { kind: :address, name: }
+
+      def create_variable_definition(type, name) = { kind: :variable_definition, type:, name: }
+
+      def create_expression_statement(value) = { kind: :expression_statement, value: }
 
       def create_return(value) = { kind: :return, value: }
     end

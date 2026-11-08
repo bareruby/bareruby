@@ -28,6 +28,10 @@ module BareRuby
 
       def create_constant(name, span) = build(:constant, [name], span)
 
+      def create_local(name, span) = build(:local, [name], span)
+
+      def create_forwarding(span) = build(:forwarding, [], span)
+
       def create_boolean(value, span) = build(:boolean, [value], span)
 
       def create_integer(value, span) = build(:integer, [value], span)
