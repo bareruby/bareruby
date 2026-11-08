@@ -36,5 +36,21 @@ RSpec.describe "Class" do
 
       it { is_expected.to eq("1\ntrue\n") }
     end
+
+    context "with a method called on the new object" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            def initialize
+            end
+
+            def answer = 42
+          end
+          puts Foo.new.answer
+        RUBY
+      end
+
+      it { is_expected.to eq("42\n") }
+    end
   end
 end
