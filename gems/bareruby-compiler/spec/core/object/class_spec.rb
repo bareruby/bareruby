@@ -52,5 +52,18 @@ RSpec.describe "Class" do
 
       it { is_expected.to eq("42\n") }
     end
+
+    context "with fewer arguments than initialize takes" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            def initialize(value) = puts(value)
+          end
+          Foo.new
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /wrong number of arguments/) }
+    end
   end
 end
