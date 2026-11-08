@@ -8,6 +8,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "irb"
+gem "parallel_tests"
 gem "rake"
 gem "rspec"
 gem "rubocop"

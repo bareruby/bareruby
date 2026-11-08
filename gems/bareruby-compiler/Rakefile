@@ -3,10 +3,17 @@
 require "bundler/gem_tasks"
 require "rspec/core/rake_task"
 
-RSpec::Core::RakeTask.new(:spec)
+RSpec::Core::RakeTask.new(:spec) do |task|
+  task.exclude_pattern = "spec/core/**/*_spec.rb"
+end
+
+desc "Run the specs under spec/core in parallel"
+task :core_test do
+  sh "parallel_rspec", "spec/core"
+end
 
 require "rubocop/rake_task"
 
 RuboCop::RakeTask.new
 
-task default: %i[spec rubocop]
+task default: %i[spec rubocop core_test]

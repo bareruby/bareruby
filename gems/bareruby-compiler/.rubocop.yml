@@ -7,3 +7,15 @@ Style/StringLiterals:
 
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
+
+# BareRuby decided not to write documentation comments for classes and modules.
+Style/Documentation:
+  Enabled: false
+
+# An RSpec example group grows with the specification it describes, so the length
+# of describe and context blocks is not limited. refine is RuboCop's default.
+Metrics/BlockLength:
+  AllowedMethods:
+    - refine
+    - describe
+    - context
