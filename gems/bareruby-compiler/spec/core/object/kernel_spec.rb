@@ -19,5 +19,35 @@ RSpec.describe "Kernel" do
 
       it { is_expected.to eq("false\n") }
     end
+
+    context "with zero" do
+      let(:source) { "puts 0" }
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with a positive Int" do
+      let(:source) { "puts 42" }
+
+      it { is_expected.to eq("42\n") }
+    end
+
+    context "with a negative Int" do
+      let(:source) { "puts(-42)" }
+
+      it { is_expected.to eq("-42\n") }
+    end
+
+    context "with the largest Int" do
+      let(:source) { "puts 2147483647" }
+
+      it { is_expected.to eq("2147483647\n") }
+    end
+
+    context "with the smallest Int" do
+      let(:source) { "puts(-2147483648)" }
+
+      it { is_expected.to eq("-2147483648\n") }
+    end
   end
 end
