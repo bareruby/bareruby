@@ -16,3 +16,9 @@ Style/StringLiteralsInInterpolation:
 
 Style/Documentation:
   Enabled: false
+
+Metrics/BlockLength:
+  AllowedMethods:
+    - refine
+    - describe
+    - context
