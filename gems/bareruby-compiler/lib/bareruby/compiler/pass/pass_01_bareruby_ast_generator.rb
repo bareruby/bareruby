@@ -7,6 +7,8 @@ module BareRuby
   module Compiler
     module Pass
       class BareRubyAstGenerator
+        FORWARDING = :"..."
+
         attr_reader :result
 
         def initialize(paths)
@@ -42,6 +44,7 @@ module BareRuby
 
         def read_method_definition(node, span)
           parameters = node.parameters ? node.parameters.requireds.map(&:name) : []
+          parameters << FORWARDING if node.parameters&.keyword_rest.is_a?(Prism::ForwardingParameterNode)
           @result.create_method_definition(node.name, parameters, read_statements(node.body), span)
         end
 
@@ -53,13 +56,22 @@ module BareRuby
 
         def read_literal(node, span)
           case node
-          when Prism::ConstantReadNode then @result.create_constant(node.name, span)
+          when Prism::ConstantReadNode, Prism::LocalVariableReadNode, Prism::ForwardingArgumentsNode
+            read_reference(node, span)
           when Prism::TrueNode, Prism::FalseNode then @result.create_boolean(node.is_a?(Prism::TrueNode), span)
           when Prism::IntegerNode then @result.create_integer(node.value, span)
           when Prism::NilNode then @result.create_nil(span)
           when Prism::SymbolNode then @result.create_symbol(node.unescaped.to_sym, span)
           when Prism::KeywordHashNode, Prism::HashNode then read_hash(node, span)
           else raise Error, "#{@path}:#{node.location.start_line}: unsupported syntax #{node.type}"
+          end
+        end
+
+        def read_reference(node, span)
+          case node
+          when Prism::ConstantReadNode then @result.create_constant(node.name, span)
+          when Prism::LocalVariableReadNode then @result.create_local(node.name, span)
+          else @result.create_forwarding(span)
           end
         end
 

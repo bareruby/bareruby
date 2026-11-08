@@ -6,7 +6,8 @@ module BareRuby
   module Compiler
     module Pass
       class TypeInferrer
-        TOP_LEVEL_CLASS = :Object
+        TOP_LEVEL_SELF = %i[instance Object].freeze
+        FORWARDING = :"..."
 
         attr_reader :result
 
@@ -16,120 +17,117 @@ module BareRuby
 
         def run
           @result = TypedAST.new
-          @owners = Hash.new { |owners, name| owners[name] = { methods: {}, includes: [] } }
-          @statements = []
-          @brast.each_file { |path, statements| collect_definitions(path, statements) }
-          add_native_methods
-          @statements.each { @result.add_statement(infer(it)) }
+          @definitions = Definitions.new(@brast, @result).run
+          @specializations = {}
+          @definitions.each_native_method do |owner, method|
+            @result.add_native_method(method[:path], "BareRuby::#{owner}", method[:rows])
+          end
+          scope = { self: TOP_LEVEL_SELF, locals: {}, forwarded: nil }
+          @definitions.statements.each { @result.add_statement(infer(it, scope)) }
           self
         end
 
         private
 
-        def collect_definitions(path, statements)
-          statements.each do |node|
-            case @brast.node_type(node)
-            when :module_definition, :class_definition then collect_owner(path, *@brast.children_of(node))
-            else @statements << node
-            end
-          end
-        end
-
-        def collect_owner(path, name, body)
-          body.each do |node|
-            case @brast.node_type(node)
-            when :method_definition then collect_method(path, name, node)
-            when :call then @owners[name][:includes] << include_target(node)
-            end
-          end
-        end
-
-        def collect_method(path, owner, node)
-          name, parameters, body = @brast.children_of(node)
-          @owners[owner][:methods][name] = { path:, parameters:, rows: body.map { native_row(it) } }
-        end
-
-        def include_target(node)
-          _receiver, name, arguments = @brast.children_of(node)
-          raise Error, "#{location(node)}: unsupported call #{name} in a class body" unless name == :include
-
-          @brast.children_of(arguments.first).first
-        end
-
-        def native_row(node)
-          receiver, name, arguments = @brast.children_of(node)
-          unless receiver && @brast.children_of(receiver) == [:Primitive] && name == :native_def
-            raise Error, "#{location(node)}: unsupported method body"
-          end
-
-          options = entries(arguments.first)
-          parameters = entries(options[:parameters]).transform_values { type_name(it) }
-          @result.create_native_row(value_of(options[:function]), parameters, type_name(options[:returns]))
-        end
-
-        def entries(node) = @brast.children_of(node).first.to_h { |key, value| [value_of(key), value] }
-
-        def value_of(node) = @brast.children_of(node).first
-
-        def type_name(node) = @brast.node_type(node) == :nil ? :nil : value_of(node)
-
-        def add_native_methods
-          @owners.each do |owner, definition|
-            definition[:methods].each_value do |method|
-              @result.add_native_method(method[:path], "BareRuby::#{owner}", method[:rows])
-            end
-          end
-        end
-
-        def infer(node)
+        def infer(node, scope)
+          value = @brast.children_of(node).first
           case @brast.node_type(node)
-          when :call then infer_call(node)
-          when :boolean then @result.create_boolean(@brast.children_of(node).first)
-          when :integer then @result.create_integer(@brast.children_of(node).first)
-          else raise Error, "#{location(node)}: unsupported expression #{@brast.node_type(node)}"
+          when :call then infer_call(node, scope)
+          when :local then @result.create_local(value, scope[:locals].fetch(value))
+          when :constant then @result.create_class_reference(value)
+          when :boolean then @result.create_boolean(value)
+          when :integer then @result.create_integer(value)
+          else @definitions.error(node, "unsupported expression #{@brast.node_type(node)}")
           end
         end
 
-        def infer_call(node)
-          _receiver, name, argument_nodes = @brast.children_of(node)
-          owner, method = lookup(TOP_LEVEL_CLASS, name)
-          raise Error, "#{location(node)}: undefined method '#{name}' for main" unless method
+        def infer_call(node, scope)
+          return infer_new_instance(node, scope) if @definitions.primitive_call?(node, :new_instance)
 
-          check_arity(node, method, argument_nodes)
-          arguments = argument_nodes.map { infer(it) }
-          row = select_row(node, owner, name, method, arguments.map { @result.type_of(it) })
+          receiver_node, name, argument_nodes = @brast.children_of(node)
+          receiver = receiver_node && infer(receiver_node, scope)
+          self_type = receiver ? @result.type_of(receiver) : scope[:self]
+          owner, method = find_method(node, self_type, name)
+          arguments = infer_arguments(node, method, argument_nodes, scope)
+          return native_call(node, owner, name, method, arguments) if method[:rows]
+
+          @result.create_method_call(specialize(owner, name, method, self_type, types_of(arguments)), receiver,
+                                     arguments)
+        end
+
+        def find_method(node, self_type, name)
+          kind, class_name = self_type
+          found = @definitions.lookup(kind == :class ? :Class : class_name, name)
+          @definitions.error(node, "undefined method '#{name}' for #{class_name}") unless found
+
+          found
+        end
+
+        def infer_arguments(node, method, argument_nodes, scope)
+          forwarding = argument_nodes.size == 1 && @brast.node_type(argument_nodes.first) == :forwarding
+          arguments = forwarding ? scope[:forwarded] : argument_nodes.map { infer(it, scope) }
+          check_arity(node, method, arguments)
+          arguments
+        end
+
+        def types_of(arguments) = arguments.map { @result.type_of(it) }
+
+        def native_call(node, owner, name, method, arguments)
+          types = types_of(arguments)
+          row = method[:rows].rfind { it[:parameters].except(:self).values == types }
+          @definitions.error(node, "no native_def of #{owner}##{name} accepts (#{types.join(", ")})") unless row
+
           @result.create_native_call("BareRuby::#{owner}", row, arguments)
         end
 
-        def select_row(node, owner, name, method, types)
-          row = method[:rows].rfind { it[:parameters].except(:self).values == types }
-          raise Error, "#{location(node)}: no native_def of #{owner}##{name} accepts (#{types.join(", ")})" unless row
+        def infer_new_instance(node, scope)
+          kind, class_name = scope[:self]
+          @definitions.error(node, "Primitive.new_instance needs a class as self") unless kind == :class
 
-          row
+          instance = [:instance, class_name]
+          owner, method = find_method(node, instance, :initialize)
+          arguments = infer_arguments(node, method, @brast.children_of(node)[2], scope)
+          initializer = specialize(owner, :initialize, method, instance, types_of(arguments))
+          scope[:allocates] = class_name
+          @result.create_new_instance(class_name, initializer, arguments)
+        end
+
+        def specialize(owner, name, method, self_type, types)
+          key = [owner, name, self_type, types]
+          return @specializations[key] if @specializations.key?(key)
+
+          function = @result.create_function("#{owner}_#{name}_#{@specializations.size}", self_type,
+                                             parameter_names(method, types).zip(types))
+          @specializations[key] = function
+          fill_function(function, method)
+        end
+
+        def parameter_names(method, types)
+          forwarding?(method) ? types.each_index.map { :"argument#{it}" } : method[:parameters]
+        end
+
+        def forwarding?(method) = method[:parameters] == [FORWARDING]
+
+        def fill_function(function, method)
+          parameters = function[:parameters]
+          forwarded = parameters.map { |name, type| @result.create_local(name, type) } if forwarding?(method)
+          scope = { self: function[:self_type], locals: parameters.to_h, forwarded: }
+          body = method[:body].map { infer(it, scope) }
+          function.merge!(body:, return_type: body.empty? ? :nil : @result.type_of(body.last),
+                          allocates: scope[:allocates])
+          @result.add_function(function)
+          function
         end
 
         def check_arity(node, method, arguments)
-          return if arguments.size == method[:parameters].size
+          parameters = method[:parameters]
+          return if forwarding?(method) || arguments.size == parameters.size
 
-          raise Error, "#{location(node)}: wrong number of arguments " \
-                       "(given #{arguments.size}, expected #{method[:parameters].size})"
-        end
-
-        def lookup(name, method_name)
-          ancestors(name).each do |owner|
-            method = @owners[owner][:methods][method_name]
-            return [owner, method] if method
-          end
-          nil
-        end
-
-        def ancestors(name) = ([name] + @owners[name][:includes].reverse.flat_map { ancestors(it) }).uniq
-
-        def location(node)
-          span = @brast.span_of(node)
-          "#{span[:filename]}:#{span[:start][:line]}"
+          @definitions.error(node, "wrong number of arguments (given #{arguments.size}, expected #{parameters.size})")
         end
       end
     end
   end
 end
+
+require_relative "pass_05_type_inferrer/definitions"
