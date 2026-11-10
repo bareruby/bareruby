@@ -59,6 +59,7 @@ module BareRuby
             case @tast.node_type(node)
             when :local then @result.create_literal(@names.variable_name(children.first))
             when :boolean, :integer then @result.create_literal(children.first.to_s)
+            when :nil then @result.create_literal("nullptr")
             else lower_expression(node)
             end
           end
