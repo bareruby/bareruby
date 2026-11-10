@@ -17,7 +17,7 @@ module BareRuby
           @result = LIR.new
           add_native_classes
           @result.array_length_type = @names.cpp_type(:Int)
-          object_classes.each { @result.add_struct(["BareRuby"], it) }
+          add_structs
           @tast.functions.each { add_function(it) }
           add_main
           self
@@ -34,7 +34,8 @@ module BareRuby
         def add_native_class(source, namespace, rows)
           *namespaces, class_name = namespace.split("::")
           declarations = rows.map { declaration(it) }
-          @result.add_header("#{File.basename(source, ".rb")}.native.hpp", namespaces, class_name, declarations)
+          @result.add_header("#{File.basename(source, ".rb")}.native.hpp", namespaces, class_name, declarations,
+                             struct_names(rows))
           @result.add_native_source("#{source.delete_suffix(".rb")}.cpp")
         end
 
@@ -44,9 +45,19 @@ module BareRuby
                                      @names.cpp_type(row[:returns]))
         end
 
-        def object_classes
-          @tast.functions.filter_map { it[:self_type].last if it[:self_type].first == :instance }.uniq
+        def struct_names(rows)
+          types = rows.flat_map { it[:parameters].values + [it[:returns]] }
+          types.filter_map { it in [:instance, name] and name }.uniq
         end
+
+        def add_structs
+          classes = @tast.classes.to_h
+          classes.keys.sort_by { depth(classes, it) }.each do |name|
+            @result.add_struct(CppNames::STRUCT_NAMESPACES, name, classes[name])
+          end
+        end
+
+        def depth(classes, name) = classes[name] ? depth(classes, classes[name]) + 1 : 0
 
         def add_function(function)
           @result.add_function(@names.function_name(function), @names.cpp_type(function[:return_type]),
@@ -58,6 +69,7 @@ module BareRuby
           parameters = []
           parameters << ["self", @names.cpp_type(function[:self_type])] if @names.instance_method?(function)
           parameters << ["storage", @names.cpp_type([:instance, function[:allocates]])] if function[:allocates]
+          parameters << ["result", @names.cpp_type(function[:return_type])] if function[:return_type] in [:array, _]
           parameters
         end
 

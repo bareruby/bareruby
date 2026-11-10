@@ -5,6 +5,10 @@ class Array
 
   def [](index) = Primitive.array_element(index)
 
+  def []=(index, value)
+    Primitive.array_store(index, value)
+  end
+
   def ==(other)
     equal = length == other.length
     index = 0

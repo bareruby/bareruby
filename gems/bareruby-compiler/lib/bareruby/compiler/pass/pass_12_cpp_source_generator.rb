@@ -23,7 +23,8 @@ module BareRuby
             "  static #{declaration[:return_type]} #{declaration[:name]}(#{parameter_list(declaration)});\n"
           end
           class_definition = "class #{header[:class_name]} {\npublic:\n#{declarations.join}};\n"
-          "#pragma once\n#include <cstdint>\n#{in_namespaces(header[:namespaces], class_definition)}"
+          forward = header[:structs].map { in_namespaces(%w[BareRuby generated], "struct #{it};\n") }.join
+          "#pragma once\n#include <cstdint>\n#{forward}#{in_namespaces(header[:namespaces], class_definition)}"
         end
 
         def main_source
@@ -35,12 +36,20 @@ module BareRuby
 
         def array_struct
           length = @lir.array_length_type
-          fields = "  #{length} length;\n  #{length} capacity;\n  T* elements;\n"
-          body = "template <typename T>\nstruct Array {\n#{fields}};\n"
-          in_namespaces(["BareRuby"], body)
+          fields = "  #{length} length;\n  #{length} capacity;\n  T elements[16];\n"
+          constructor = "template <typename T>\nArray<T>* array_new(Array<T>* array, #{length} length, T value) {\n  " \
+                        "array->length = length;\n  array->capacity = length;\n  " \
+                        "for (#{length} index = 0; index < length; index++) array->elements[index] = value;\n  " \
+                        "return array;\n}\n"
+          in_namespaces(["BareRuby"], "template <typename T>\nstruct Array {\n#{fields}};\n#{constructor}")
         end
 
-        def structs = @lir.structs.map { in_namespaces(it[:namespaces], "struct #{it[:name]} {};\n") }.join
+        def structs
+          @lir.structs.map do |struct|
+            parent = struct[:parent] ? " : #{struct[:parent]}" : ""
+            in_namespaces(struct[:namespaces], "struct #{struct[:name]}#{parent} {};\n")
+          end.join
+        end
 
         def prototypes = @lir.functions.reject { it[:name] == "main" }.map { "#{signature(it)};\n" }.join
 
@@ -82,7 +91,15 @@ module BareRuby
 
         def compound_expression(node)
           case node[:kind]
-          when :assignment then "#{node[:name]} = #{expression(node[:value])}"
+          when :assignment then "#{expression(node[:target])} = #{expression(node[:value])}"
+          when :dereference then "*#{expression(node[:value])}"
+          when :list then "{#{arguments(node[:values])}}"
+          else access_expression(node)
+          end
+        end
+
+        def access_expression(node)
+          case node[:kind]
           when :binary then "(#{expression(node[:left])} #{node[:operator]} #{expression(node[:right])})"
           when :member then "#{expression(node[:object])}->#{node[:member]}"
           when :element then "#{expression(node[:array])}[#{expression(node[:index])}]"

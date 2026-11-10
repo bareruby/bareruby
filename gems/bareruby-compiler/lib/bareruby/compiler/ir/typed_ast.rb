@@ -3,7 +3,10 @@
 module BareRuby
   module Compiler
     class TypedAST
-      attr_accessor :top_level_locals
+      VALUE_TYPES = %i[Bool Int UInt8 UInt64].freeze
+      TYPE_ALIASES = { Byte: :UInt8 }.freeze
+
+      attr_accessor :top_level_locals, :classes
       attr_reader :statements, :native_methods, :functions
 
       def initialize
@@ -61,6 +64,10 @@ module BareRuby
 
       def create_array_element(array_type, index) = build(:array_element, [index], array_type.last)
 
+      def create_array_store(index, value) = build(:array_store, [index, value], type_of(value))
+
+      def create_array_new(length, value) = build(:array_new, [length, value], [:array, type_of(value)])
+
       def create_class_reference(name) = build(:class_reference, [name], [:class, name])
 
       def create_boolean(value) = build(:boolean, [value], :Bool)
@@ -73,9 +80,14 @@ module BareRuby
 
       def type_of(node) = node[:result_type]
 
+      def type_named(name)
+        name = TYPE_ALIASES.fetch(name, name)
+        VALUE_TYPES.include?(name) ? name : [:instance, name]
+      end
+
       def class_of(type)
         case type
-        in :Int then :Integer
+        in :Int | :UInt8 | :UInt64 then :Integer
         in [:class, _] then :Class
         in [:array, _] then :Array
         in [:instance, class_name] then class_name

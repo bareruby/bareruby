@@ -56,6 +56,7 @@ module BareRuby
           case node
           when Prism::WhileNode then @result.create_while(read(node.predicate), read_statements(node.statements), span)
           when Prism::AndNode then @result.create_and(read(node.left), read(node.right), span)
+          when Prism::ParenthesesNode then read(node.body.body.last)
           else read_literal(node, span)
           end
         end
