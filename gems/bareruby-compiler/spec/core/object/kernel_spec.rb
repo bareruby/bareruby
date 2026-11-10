@@ -50,4 +50,13 @@ RSpec.describe "Kernel" do
       it { is_expected.to eq("-2147483648\n") }
     end
   end
+  describe "#nil?" do
+    subject(:output) { output_of(source) }
+
+    context "with an object" do
+      let(:source) { "puts Object.new.nil?" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
