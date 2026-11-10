@@ -35,11 +35,11 @@ module BareRuby
       end
 
       def infer_types
-        @tast = Pass::TypeInferrer.new(@brast).run.result
+        @tast = Pass::TypeInferrer.new(@brast, size_of("POINTER")).run.result
       end
 
       def generate_lir
-        @lir = Pass::LirGenerator.new(@tast, int_width).run.result
+        @lir = Pass::LirGenerator.new(@tast, size_of("INT") * 8).run.result
       end
 
       def generate_cpp_source
@@ -48,9 +48,9 @@ module BareRuby
         end
       end
 
-      def int_width
-        macros, = Open3.capture2(@cxx, "-dM", "-E", "-x", "c++", File::NULL)
-        macros[/^#define __SIZEOF_INT__ (\d+)$/, 1].to_i * 8
+      def size_of(type)
+        @macros ||= Open3.capture2(@cxx, "-dM", "-E", "-x", "c++", File::NULL).first
+        @macros[/^#define __SIZEOF_#{type}__ (\d+)$/, 1].to_i
       end
     end
   end

@@ -13,13 +13,13 @@ module BareRuby
         @native_sources = []
       end
 
-      def add_header(name, namespaces, class_name, declarations)
-        @headers << { name:, namespaces:, class_name:, declarations: }
+      def add_header(name, namespaces, class_name, declarations, structs)
+        @headers << { name:, namespaces:, class_name:, declarations:, structs: }
         self
       end
 
-      def add_struct(namespaces, name)
-        @structs << { namespaces:, name: }
+      def add_struct(namespaces, name, parent)
+        @structs << { namespaces:, name:, parent: }
         self
       end
 
@@ -43,7 +43,15 @@ module BareRuby
 
       def create_variable_definition(type, name, values = []) = { kind: :variable_definition, type:, name:, values: }
 
-      def create_assignment(name, value) = { kind: :assignment, name:, value: }
+      def create_assignment(target, value) = { kind: :assignment, target:, value: }
+
+      def create_conditional(condition, consequent, alternative)
+        { kind: :conditional, condition:, consequent:, alternative: }
+      end
+
+      def create_dereference(value) = { kind: :dereference, value: }
+
+      def create_list(values) = { kind: :list, values: }
 
       def create_binary(operator, left, right) = { kind: :binary, operator:, left:, right: }
 

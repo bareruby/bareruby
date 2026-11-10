@@ -11,6 +11,7 @@ module BareRuby
             @names = names
             @prelude = []
             @temporaries = 0
+            @arrays = ArrayLowering.new(typed_ast, lir, names, self)
           end
 
           def lower_statements(nodes, return_type)
@@ -19,14 +20,37 @@ module BareRuby
 
               value = lower(node)
               last = index == nodes.size - 1 && return_type != :nil
-              statement = last ? @result.create_return(value) : @result.create_expression_statement(value)
-              @prelude.slice!(0..) + [statement]
+              @prelude.slice!(0..) + (last ? return_statements(value, return_type) : [statement(value)])
             end
           end
 
+          def lower(node)
+            return @arrays.lower(node) if ArrayLowering::NODE_TYPES.include?(@tast.node_type(node))
+
+            lower_value(node)
+          end
+
+          def temporary(type, values = [])
+            name = "temporary#{@temporaries += 1}"
+            @prelude << @result.create_variable_definition(type, name, values)
+            @result.create_address(name)
+          end
+
+          def self_literal = @result.create_literal("self")
+
           private
 
-          def lower(node)
+          def statement(value) = @result.create_expression_statement(value)
+
+          def return_statements(value, return_type)
+            return [@result.create_return(value)] unless return_type in [:array, _]
+
+            result = @result.create_literal("result")
+            copy = @result.create_assignment(@result.create_dereference(result), @result.create_dereference(value))
+            [statement(copy), @result.create_return(result)]
+          end
+
+          def lower_value(node)
             children = @tast.children_of(node)
             case @tast.node_type(node)
             when :native_call then lower_native_call(*children)
@@ -42,35 +66,30 @@ module BareRuby
             children = @tast.children_of(node)
             case @tast.node_type(node)
             when :self then self_literal
-            when :local_write then @result.create_assignment(@names.variable_name(children.first), lower(children.last))
+            when :local_write then @result.create_assignment(variable(children.first), lower(children.last))
             when :and then @result.create_binary("&&", *children.map { lower(it) })
-            when :array then lower_array(children.first, @tast.type_of(node).last)
-            else lower_array_primitive(node)
+            when :if then conditional(*children)
+            else @arrays.lower(node)
             end
           end
 
-          def lower_array_primitive(node)
-            case @tast.node_type(node)
-            when :array_length then @result.create_member(self_literal, "length")
-            when :array_element
-              elements = @result.create_member(self_literal, "elements")
-              @result.create_element(elements, lower(@tast.children_of(node).first))
+          def conditional(condition, consequent, alternative)
+            @result.create_conditional(truth(condition), lower(consequent), lower(alternative))
+          end
+
+          def truth(condition)
+            case @tast.type_of(condition)
+            when :Bool then lower(condition)
+            when :nil then @result.create_binary(",", lower(condition), @result.create_literal("false"))
+            else @result.create_binary(",", lower(condition), @result.create_literal("true"))
             end
           end
+
+          def variable(name) = @result.create_literal(@names.variable_name(name))
 
           def lower_while(condition, body)
             condition = lower(condition)
             @prelude.slice!(0..) + [@result.create_while(condition, lower_statements(body, :nil))]
-          end
-
-          def lower_array(elements, element_type)
-            name = "temporary#{@temporaries += 1}"
-            @prelude << @result.create_variable_definition(@names.cpp_type(element_type), "#{name}_elements[]",
-                                                           elements.map { lower(it) })
-            length = @result.create_literal(elements.size.to_s)
-            @prelude << @result.create_variable_definition(@names.array_type(element_type), name,
-                                                           [length, length, @result.create_literal("#{name}_elements")])
-            @result.create_address(name)
           end
 
           def lower_native_call(namespace, row, receiver, arguments)
@@ -82,8 +101,16 @@ module BareRuby
           def lower_method_call(function, receiver, arguments)
             hidden = []
             hidden << (receiver ? lower(receiver) : self_literal) if @names.instance_method?(function)
-            hidden << temporary(function[:allocates]) if function[:allocates]
+            hidden += storages(function)
             @result.create_call(@names.function_name(function), hidden + arguments.map { lower(it) })
+          end
+
+          def storages(function)
+            storages = []
+            storages << temporary(@names.struct_name(function[:allocates])) if function[:allocates]
+            return_type = function[:return_type]
+            storages << temporary(@names.array_type(return_type.last)) if return_type in [:array, _]
+            storages
           end
 
           def lower_new_instance(initializer, arguments)
@@ -92,14 +119,6 @@ module BareRuby
             @prelude << @result.create_expression_statement(call)
             storage
           end
-
-          def temporary(class_name)
-            name = "temporary#{@temporaries += 1}"
-            @prelude << @result.create_variable_definition("BareRuby::#{class_name}", name)
-            @result.create_address(name)
-          end
-
-          def self_literal = @result.create_literal("self")
         end
       end
     end

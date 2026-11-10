@@ -11,19 +11,20 @@ module BareRuby
 
         attr_reader :result
 
-        def initialize(bareruby_ast)
+        def initialize(bareruby_ast, pointer_size)
           @brast = bareruby_ast
+          @pointer_size = pointer_size
         end
 
         def run
           @result = TypedAST.new
           @definitions = Definitions.new(@brast, @result).run
-          @expressions = Expressions.new(@brast, @result, @definitions, self)
+          @expressions = Expressions.new(@brast, @result, @definitions, self, @pointer_size)
+          @native_rows = NativeRows.new(@brast, @definitions)
           @specializer = Specializer.new(@result, self)
           add_native_methods
-          scope = { self: TOP_LEVEL_SELF, locals: {}, forwarded: nil }
-          @definitions.statements.each { @result.add_statement(infer(it, scope)) }
-          @result.top_level_locals = scope[:locals]
+          infer_top_level
+          @result.classes = @definitions.classes
           self
         end
 
@@ -41,6 +42,12 @@ module BareRuby
 
         private
 
+        def infer_top_level
+          scope = { self: TOP_LEVEL_SELF, locals: {}, forwarded: nil }
+          @definitions.statements.each { @result.add_statement(infer(it, scope)) }
+          @result.top_level_locals = scope[:locals]
+        end
+
         def add_native_methods
           @definitions.each_native_method do |owner, path, rows|
             @result.add_native_method(path, "BareRuby::#{owner}", rows)
@@ -55,9 +62,17 @@ module BareRuby
           self_type = receiver ? @result.type_of(receiver) : scope[:self]
           owner, method = find_method(node, self_type, name)
           arguments = infer_arguments(node, method, argument_nodes, scope)
-          return native_call(node, owner, method, receiver, arguments) if method[:rows]
+          call_method(node, [owner, method], receiver, self_type, arguments)
+        end
 
-          function = @specializer.specialize(owner, name, method, self_type, types_of(arguments))
+        def call_method(node, (owner, method), receiver, self_type, arguments)
+          types = types_of(arguments)
+          if method[:rows]
+            row = @native_rows.select(node, owner, method, self_type, types)
+            return @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
+          end
+
+          function = @specializer.specialize(owner, @brast.children_of(node)[1], method, self_type, types)
           @result.create_method_call(function, receiver, arguments)
         end
 
@@ -88,15 +103,6 @@ module BareRuby
 
         def types_of(arguments) = arguments.map { @result.type_of(it) }
 
-        def native_call(node, owner, method, receiver, arguments)
-          name = @brast.children_of(node)[1]
-          types = types_of(arguments)
-          row = method[:rows].map(&:last).rfind { it[:parameters].except(:self).values == types }
-          @definitions.error(node, "no native_def of #{owner}##{name} accepts (#{types.join(", ")})") unless row
-
-          @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
-        end
-
         def infer_new_instance(node, scope)
           kind, class_name = scope[:self]
           @definitions.error(node, "Primitive.new_instance needs a class as self") unless kind == :class
@@ -123,3 +129,4 @@ end
 require_relative "pass_05_type_inferrer/definitions"
 require_relative "pass_05_type_inferrer/expressions"
 require_relative "pass_05_type_inferrer/specializer"
+require_relative "pass_05_type_inferrer/native_rows"

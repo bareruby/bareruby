@@ -5,16 +5,24 @@ module BareRuby
     module Pass
       class TypeInferrer
         class Expressions
-          ARRAY_PRIMITIVES = %i[array_length array_element].freeze
+          ARRAY_PRIMITIVES = %i[array_length array_element array_store pointer_size].freeze
 
-          def initialize(bareruby_ast, typed_ast, definitions, inferrer)
+          def initialize(bareruby_ast, typed_ast, definitions, inferrer, pointer_size)
             @brast = bareruby_ast
             @result = typed_ast
             @definitions = definitions
             @inferrer = inferrer
+            @pointer_size = pointer_size
           end
 
-          def array_primitive?(node) = ARRAY_PRIMITIVES.any? { @definitions.primitive_call?(node, it) }
+          def array_primitive?(node)
+            array_new?(node) || ARRAY_PRIMITIVES.any? { @definitions.primitive_call?(node, it) }
+          end
+
+          def array_new?(node)
+            receiver, name, = @brast.children_of(node)
+            @brast.node_type(node) == :call && name == :new && receiver && @brast.children_of(receiver) == [:Array]
+          end
 
           def infer(node, scope)
             children = @brast.children_of(node)
@@ -22,20 +30,30 @@ module BareRuby
             when :self then @result.create_self(scope[:self])
             when :local_write then infer_local_write(*children, scope)
             when :while then infer_while(*children, scope)
-            when :and then @result.create_and(*children.map { @inferrer.infer(it, scope) })
+            when :and, :if then infer_operator(node, scope)
             when :array then infer_array(node, children.first, scope)
             else @definitions.error(node, "unsupported expression #{@brast.node_type(node)}")
             end
           end
 
           def infer_array_primitive(node, scope)
-            _receiver, name, arguments = @brast.children_of(node)
-            return @result.create_array_length(scope[:self]) if name == :array_length
-
-            @result.create_array_element(scope[:self], @inferrer.infer(arguments.first, scope))
+            _receiver, name, argument_nodes = @brast.children_of(node)
+            arguments = argument_nodes.map { @inferrer.infer(it, scope) }
+            case name
+            when :new then @result.create_array_new(*arguments)
+            when :array_length then @result.create_array_length(scope[:self])
+            when :array_element then @result.create_array_element(scope[:self], *arguments)
+            when :array_store then @result.create_array_store(*arguments)
+            when :pointer_size then @result.create_integer(@pointer_size)
+            end
           end
 
           private
+
+          def infer_operator(node, scope)
+            operands = @brast.children_of(node).map { @inferrer.infer(it, scope) }
+            @brast.node_type(node) == :and ? @result.create_and(*operands) : @result.create_if(*operands)
+          end
 
           def infer_local_write(name, value_node, scope)
             value = @inferrer.infer(value_node, scope)

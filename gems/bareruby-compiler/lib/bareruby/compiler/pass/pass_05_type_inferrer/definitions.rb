@@ -19,6 +19,8 @@ module BareRuby
             self
           end
 
+          def classes = @owners.filter_map { |name, definition| [name, definition[:superclass]] if definition[:class] }
+
           def each_native_method
             @owners.each do |owner, definition|
               definition[:methods].each_value do |method|
@@ -64,17 +66,11 @@ module BareRuby
           end
 
           def collect_class(path, name, body)
-            @owners[name][:superclass] = superclass_of(name)
+            @owners[name].merge!(class: true, superclass: superclass_of(name))
             collect_owner(path, name, body)
           end
 
-          def superclass_of(name)
-            case name
-            when :BasicObject then nil
-            when :Object then :BasicObject
-            else :Object
-            end
-          end
+          def superclass_of(name) = { BasicObject: nil, Object: :BasicObject }.fetch(name, :Object)
 
           def collect_owner(path, name, body)
             body.each do |node|
@@ -121,7 +117,9 @@ module BareRuby
 
           def value_of(node) = @brast.children_of(node).first
 
-          def type_name(node) = @brast.node_type(node) == :nil ? :nil : value_of(node)
+          def type_name(node) = @brast.node_type(node) == :nil ? :nil : @tast.type_named(value_of(node))
+
+          public
 
           def ancestors(name)
             definition = @owners[name]
