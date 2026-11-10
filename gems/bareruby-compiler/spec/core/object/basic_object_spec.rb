@@ -94,4 +94,13 @@ RSpec.describe "BasicObject" do
       it { is_expected.to eq("false\n") }
     end
   end
+  describe "#!" do
+    subject(:output) { output_of(source) }
+
+    context "with an object" do
+      let(:source) { "puts !BasicObject.new" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
