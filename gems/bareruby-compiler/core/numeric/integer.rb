@@ -2,6 +2,7 @@
 
 class Integer
   Primitive.native_def :==, function: :eq_ovl_int, returns: Bool, parameters: { self: Int, other: Int }
+  Primitive.native_def :==, function: :eq_ovl_u8, returns: Bool, parameters: { self: Byte, other: Byte }
   Primitive.native_def :<, function: :lt_ovl_int, returns: Bool, parameters: { self: Int, other: Int }
   Primitive.native_def :+, function: :plus_ovl_int, returns: Int, parameters: { self: Int, other: Int }
   Primitive.native_def :*, function: :mul_ovl_int, returns: Int, parameters: { self: Int, other: Int }

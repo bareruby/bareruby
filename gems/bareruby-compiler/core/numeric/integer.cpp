@@ -29,3 +29,7 @@ uint8_t BareRuby::Integer::to_u8_ovl_int(int32_t self) {
 uint8_t BareRuby::Integer::to_u8_ovl_u64(uint64_t self) {
   return static_cast<uint8_t>(self);
 }
+
+bool BareRuby::Integer::eq_ovl_u8(uint8_t self, uint8_t other) {
+  return self == other;
+}
