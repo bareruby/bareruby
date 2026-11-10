@@ -103,4 +103,24 @@ RSpec.describe "BasicObject" do
       it { is_expected.to eq("false\n") }
     end
   end
+  describe "#!=" do
+    subject(:output) { output_of(source) }
+
+    context "with the same object" do
+      let(:source) do
+        <<~RUBY
+          object = BasicObject.new
+          puts object != object
+        RUBY
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with two different objects" do
+      let(:source) { "puts BasicObject.new != BasicObject.new" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
