@@ -19,8 +19,8 @@ module BareRuby
           @result = TypedAST.new
           @definitions = Definitions.new(@brast, @result).run
           @specializations = {}
-          @definitions.each_native_method do |owner, method|
-            @result.add_native_method(method[:path], "BareRuby::#{owner}", method[:rows])
+          @definitions.each_native_method do |owner, path, rows|
+            @result.add_native_method(path, "BareRuby::#{owner}", rows)
           end
           scope = { self: TOP_LEVEL_SELF, locals: {}, forwarded: nil }
           @definitions.statements.each { @result.add_statement(infer(it, scope)) }
@@ -74,7 +74,7 @@ module BareRuby
 
         def native_call(node, owner, name, method, arguments)
           types = types_of(arguments)
-          row = method[:rows].rfind { it[:parameters].except(:self).values == types }
+          row = method[:rows].map(&:last).rfind { it[:parameters].except(:self).values == types }
           @definitions.error(node, "no native_def of #{owner}##{name} accepts (#{types.join(", ")})") unless row
 
           @result.create_native_call("BareRuby::#{owner}", row, arguments)
@@ -121,7 +121,7 @@ module BareRuby
 
         def check_arity(node, method, arguments)
           parameters = method[:parameters]
-          return if forwarding?(method) || arguments.size == parameters.size
+          return if method[:rows] || forwarding?(method) || arguments.size == parameters.size
 
           @definitions.error(node, "wrong number of arguments (given #{arguments.size}, expected #{parameters.size})")
         end

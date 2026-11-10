@@ -21,7 +21,11 @@ module BareRuby
 
           def each_native_method
             @owners.each do |owner, definition|
-              definition[:methods].each_value { yield owner, it if it[:rows] }
+              definition[:methods].each_value do |method|
+                next unless method[:rows]
+
+                method[:rows].group_by(&:first).each { |path, rows| yield owner, path, rows.map(&:last) }
+              end
             end
           end
 
@@ -76,15 +80,28 @@ module BareRuby
             body.each do |node|
               case @brast.node_type(node)
               when :method_definition then collect_method(path, name, node)
-              when :call then @owners[name][:includes] << include_target(node)
+              when :call then collect_call(path, name, node)
               end
             end
           end
 
           def collect_method(path, owner, node)
             name, parameters, body = @brast.children_of(node)
-            rows = !body.empty? && body.all? { primitive_call?(it, :native_def) } ? body.map { native_row(it) } : nil
-            @owners[owner][:methods][name] = { path:, parameters:, body:, rows: }
+            @owners[owner][:methods][name] = { path:, parameters:, body:, rows: nil }
+          end
+
+          def collect_call(path, owner, node)
+            return collect_native_def(path, owner, node) if primitive_call?(node, :native_def)
+
+            @owners[owner][:includes] << include_target(node)
+          end
+
+          def collect_native_def(path, owner, node)
+            name_node, options = @brast.children_of(node)[2]
+            methods = @owners[owner][:methods]
+            name = value_of(name_node)
+            methods[name] = { rows: [] } unless methods[name]&.fetch(:rows)
+            methods[name][:rows] << [path, native_row(options)]
           end
 
           def include_target(node)
@@ -95,7 +112,7 @@ module BareRuby
           end
 
           def native_row(node)
-            options = entries(@brast.children_of(node)[2].first)
+            options = entries(node)
             parameters = entries(options[:parameters]).transform_values { type_name(it) }
             @tast.create_native_row(value_of(options[:function]), parameters, type_name(options[:returns]))
           end
