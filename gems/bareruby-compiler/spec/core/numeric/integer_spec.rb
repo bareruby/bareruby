@@ -25,5 +25,17 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("false\n") }
     end
+
+    context "with two equal Bytes" do
+      let(:source) { "puts 7.to_u8 == 7.to_u8" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with two different Bytes" do
+      let(:source) { "puts 7.to_u8 == 8.to_u8" }
+
+      it { is_expected.to eq("false\n") }
+    end
   end
 end
