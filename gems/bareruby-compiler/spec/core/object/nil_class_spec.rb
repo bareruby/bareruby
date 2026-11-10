@@ -13,6 +13,12 @@ RSpec.describe "NilClass" do
 
       it { is_expected.to eq("true\n") }
     end
+
+    context "with nil returned by a call" do
+      let(:source) { "puts(puts(1).nil?)" }
+
+      it { is_expected.to eq("1\ntrue\n") }
+    end
   end
   describe "#__id__" do
     subject(:output) { output_of(source) }
