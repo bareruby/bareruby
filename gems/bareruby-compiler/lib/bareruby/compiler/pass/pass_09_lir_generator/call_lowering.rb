@@ -27,16 +27,20 @@ module BareRuby
           private
 
           def native_call(namespace, row, receiver, arguments)
-            hidden = []
-            hidden << (receiver ? @body.lower(receiver) : @body.self_literal) if row[:parameters].key?(:self)
+            hidden = self_values(receiver, row[:parameters].key?(:self))
             @result.create_call("#{namespace}::#{row[:function]}", hidden + values(arguments))
           end
 
           def method_call(function, receiver, arguments)
-            hidden = []
-            hidden << (receiver ? @body.lower(receiver) : @body.self_literal) if @names.instance_method?(function)
-            hidden += storages(function)
+            hidden = self_values(receiver, @names.instance_method?(function)) + storages(function)
             @result.create_call(@names.function_name(function), hidden + values(arguments))
+          end
+
+          def self_values(receiver, passes_self)
+            return values([receiver]) if receiver && @tast.type_of(receiver) == :nil
+            return [] unless passes_self
+
+            [receiver ? @body.lower(receiver) : @body.self_literal]
           end
 
           def values(arguments)
