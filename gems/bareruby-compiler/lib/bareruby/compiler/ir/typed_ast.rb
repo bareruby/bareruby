@@ -32,8 +32,8 @@ module BareRuby
 
       def create_native_row(function, parameters, returns) = { function:, parameters:, returns: }
 
-      def create_native_call(namespace, row, arguments)
-        build(:native_call, [namespace, row, arguments], row[:returns])
+      def create_native_call(namespace, row, receiver, arguments)
+        build(:native_call, [namespace, row, receiver, arguments], row[:returns])
       end
 
       def create_method_call(function, receiver, arguments)
@@ -57,6 +57,14 @@ module BareRuby
       def children_of(node) = node[:children]
 
       def type_of(node) = node[:result_type]
+
+      def class_of(type)
+        case type
+        in :Int then :Integer
+        in [:class, _] then :Class
+        in [:instance, class_name] then class_name
+        end
+      end
 
       private
 

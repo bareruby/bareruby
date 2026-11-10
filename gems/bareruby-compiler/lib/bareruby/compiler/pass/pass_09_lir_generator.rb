@@ -96,8 +96,10 @@ module BareRuby
           end
         end
 
-        def lower_native_call(namespace, row, arguments)
-          @result.create_call("#{namespace}::#{row[:function]}", arguments.map { lower(it) })
+        def lower_native_call(namespace, row, receiver, arguments)
+          hidden = []
+          hidden << (receiver ? lower(receiver) : @result.create_literal("self")) if row[:parameters].key?(:self)
+          @result.create_call("#{namespace}::#{row[:function]}", hidden + arguments.map { lower(it) })
         end
 
         def lower_method_call(function, receiver, arguments)

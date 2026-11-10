@@ -49,15 +49,15 @@ module BareRuby
           self_type = receiver ? @result.type_of(receiver) : scope[:self]
           owner, method = find_method(node, self_type, name)
           arguments = infer_arguments(node, method, argument_nodes, scope)
-          return native_call(node, owner, name, method, arguments) if method[:rows]
+          return native_call(node, owner, method, receiver, arguments) if method[:rows]
 
           @result.create_method_call(specialize(owner, name, method, self_type, types_of(arguments)), receiver,
                                      arguments)
         end
 
         def find_method(node, self_type, name)
-          kind, class_name = self_type
-          found = @definitions.lookup(kind == :class ? :Class : class_name, name)
+          class_name = @result.class_of(self_type)
+          found = @definitions.lookup(class_name, name)
           @definitions.error(node, "undefined method '#{name}' for #{class_name}") unless found
 
           found
@@ -72,12 +72,13 @@ module BareRuby
 
         def types_of(arguments) = arguments.map { @result.type_of(it) }
 
-        def native_call(node, owner, name, method, arguments)
+        def native_call(node, owner, method, receiver, arguments)
+          name = @brast.children_of(node)[1]
           types = types_of(arguments)
           row = method[:rows].map(&:last).rfind { it[:parameters].except(:self).values == types }
           @definitions.error(node, "no native_def of #{owner}##{name} accepts (#{types.join(", ")})") unless row
 
-          @result.create_native_call("BareRuby::#{owner}", row, arguments)
+          @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
         end
 
         def infer_new_instance(node, scope)
