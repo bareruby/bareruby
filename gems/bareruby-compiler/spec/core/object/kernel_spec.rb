@@ -59,4 +59,37 @@ RSpec.describe "Kernel" do
       it { is_expected.to eq("false\n") }
     end
   end
+  describe "#eql?" do
+    subject(:output) { output_of(source) }
+
+    context "with the same object" do
+      let(:source) do
+        <<~RUBY
+          object = Object.new
+          puts object.eql?(object)
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with two different objects" do
+      let(:source) { "puts Object.new.eql?(Object.new)" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a class whose equal? always returns true" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            def equal?(other) = true
+          end
+          puts Foo.new.eql?(Foo.new)
+        RUBY
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
