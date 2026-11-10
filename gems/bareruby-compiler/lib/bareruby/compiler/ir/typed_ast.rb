@@ -92,6 +92,7 @@ module BareRuby
       def class_of(type)
         case type
         in :Int | :UInt8 | :UInt64 then :Integer
+        in :Bool then :Object
         in [:class, _] then :Class
         in [:array, _] then :Array
         in [:instance, class_name] then class_name

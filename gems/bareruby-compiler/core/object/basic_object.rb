@@ -10,6 +10,9 @@ class BasicObject
 
   def ! = self ? false : true
 
+  # rubocop:disable-next Style/InverseMethods -- this defines != itself, so writing != here would call itself
+  def !=(other) = !(self == other)
+
   def equal?(other) = __id__ == other.__id__
 
   # rubocop:disable-next Naming/MethodName -- BasicObject is the class that defines __id__
