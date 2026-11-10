@@ -6,6 +6,8 @@ class BasicObject
   # rubocop:disable-next Style/RedundantInitialize -- BasicObject has no superclass that defines initialize
   def initialize; end
 
+  def ==(other) = equal?(other)
+
   def equal?(other) = __id__ == other.__id__
 
   # rubocop:disable-next Naming/MethodName -- BasicObject is the class that defines __id__
