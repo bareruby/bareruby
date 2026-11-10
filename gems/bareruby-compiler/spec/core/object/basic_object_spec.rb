@@ -36,5 +36,22 @@ RSpec.describe "BasicObject" do
 
       it { is_expected.to eq("9\n") }
     end
+
+    context "with the same object" do
+      let(:source) do
+        <<~RUBY
+          object = BasicObject.new
+          puts object.__id__ == object.__id__
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with two different objects" do
+      let(:source) { "puts BasicObject.new.__id__ == BasicObject.new.__id__" }
+
+      it { is_expected.to eq("false\n") }
+    end
   end
 end
