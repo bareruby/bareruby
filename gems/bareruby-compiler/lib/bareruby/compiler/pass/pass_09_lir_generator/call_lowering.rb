@@ -6,6 +6,7 @@ module BareRuby
       class LirGenerator
         class CallLowering
           NODE_TYPES = %i[native_call method_call new_instance].freeze
+          NIL_VALUES = %i[nil local self].freeze
 
           def initialize(typed_ast, lir, names, body)
             @tast = typed_ast
@@ -28,15 +29,26 @@ module BareRuby
           def native_call(namespace, row, receiver, arguments)
             hidden = []
             hidden << (receiver ? @body.lower(receiver) : @body.self_literal) if row[:parameters].key?(:self)
-            @result.create_call("#{namespace}::#{row[:function]}", hidden + arguments.map { @body.lower(it) })
+            @result.create_call("#{namespace}::#{row[:function]}", hidden + values(arguments))
           end
 
           def method_call(function, receiver, arguments)
             hidden = []
             hidden << (receiver ? @body.lower(receiver) : @body.self_literal) if @names.instance_method?(function)
             hidden += storages(function)
-            @result.create_call(@names.function_name(function), hidden + arguments.map { @body.lower(it) })
+            @result.create_call(@names.function_name(function), hidden + values(arguments))
           end
+
+          def values(arguments)
+            arguments.filter_map do |argument|
+              next @body.lower(argument) unless @tast.type_of(argument) == :nil
+
+              evaluate(argument) unless NIL_VALUES.include?(@tast.node_type(argument))
+              nil
+            end
+          end
+
+          def evaluate(node) = @body.hoist(@result.create_expression_statement(@body.lower(node)))
 
           def storages(function)
             storages = []
@@ -48,7 +60,7 @@ module BareRuby
 
           def new_instance(initializer, arguments)
             storage = @result.create_literal("storage")
-            call = @result.create_call(@names.function_name(initializer), [storage] + arguments.map { @body.lower(it) })
+            call = @result.create_call(@names.function_name(initializer), [storage] + values(arguments))
             @body.hoist(@result.create_expression_statement(call))
             storage
           end
