@@ -27,4 +27,14 @@ RSpec.describe "BasicObject" do
       it { expect { output }.to raise_error(BareRuby::Compiler::Error, /wrong number of arguments/) }
     end
   end
+
+  describe "#__id__" do
+    subject(:output) { output_of(source) }
+
+    context "with the 64-bit host" do
+      let(:source) { "puts BasicObject.new.__id__.length" }
+
+      it { is_expected.to eq("9\n") }
+    end
+  end
 end
