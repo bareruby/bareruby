@@ -36,6 +36,7 @@ module BareRuby
           when :constant then @result.create_class_reference(value)
           when :boolean then @result.create_boolean(value)
           when :integer then @result.create_integer(value)
+          when :nil then @result.create_nil
           else @expressions.infer(node, scope)
           end
         end

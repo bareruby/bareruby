@@ -25,7 +25,7 @@ module BareRuby
 
           def array_type(element_type) = "BareRuby::Array<#{cpp_type(element_type)}>"
 
-          def instance_method?(function) = !(function[:self_type] in [:class, _])
+          def instance_method?(function) = !(function[:self_type] in [:class, _] | :nil)
 
           def function_name(function) = "bareruby_#{function[:name].gsub(/\W/) { format("_%02x", it.ord) }}"
 

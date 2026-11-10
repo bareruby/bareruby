@@ -78,6 +78,8 @@ module BareRuby
 
       def create_integer(value) = build(:integer, [value], :Int)
 
+      def create_nil = build(:nil, [], :nil)
+
       def node_type(node) = node[:type]
 
       def children_of(node) = node[:children]
@@ -93,6 +95,7 @@ module BareRuby
         case type
         in :Int | :UInt8 | :UInt64 then :Integer
         in :Bool then :Object
+        in :nil then :NilClass
         in [:class, _] then :Class
         in [:array, _] then :Array
         in [:instance, class_name] then class_name
