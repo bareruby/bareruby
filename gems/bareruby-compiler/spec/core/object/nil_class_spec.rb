@@ -19,6 +19,19 @@ RSpec.describe "NilClass" do
 
       it { is_expected.to eq("1\ntrue\n") }
     end
+
+    context "with nil returned by a method that ends with nil" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            def bar = nil
+          end
+          puts Foo.new.bar.nil?
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
   end
   describe "#__id__" do
     subject(:output) { output_of(source) }
