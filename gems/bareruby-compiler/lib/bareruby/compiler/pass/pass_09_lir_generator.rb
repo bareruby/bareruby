@@ -96,3 +96,4 @@ end
 require_relative "pass_09_lir_generator/cpp_names"
 require_relative "pass_09_lir_generator/function_body"
 require_relative "pass_09_lir_generator/array_lowering"
+require_relative "pass_09_lir_generator/call_lowering"
