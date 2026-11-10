@@ -58,6 +58,10 @@ module BareRuby
 
       def create_and(left, right) = build(:and, [left, right], :Bool)
 
+      def create_if(condition, consequent, alternative)
+        build(:if, [condition, consequent, alternative], type_of(consequent))
+      end
+
       def create_array(elements, element_type) = build(:array, [elements], [:array, element_type])
 
       def create_array_length(array_type) = build(:array_length, [array_type], :Int)

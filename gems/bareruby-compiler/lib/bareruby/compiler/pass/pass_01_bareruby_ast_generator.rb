@@ -57,8 +57,14 @@ module BareRuby
           when Prism::WhileNode then @result.create_while(read(node.predicate), read_statements(node.statements), span)
           when Prism::AndNode then @result.create_and(read(node.left), read(node.right), span)
           when Prism::ParenthesesNode then read(node.body.body.last)
+          when Prism::IfNode then read_if(node, span)
           else read_literal(node, span)
           end
+        end
+
+        def read_if(node, span)
+          branches = [node.statements, node.subsequent.statements].map { read(it.body.last) }
+          @result.create_if(read(node.predicate), *branches, span)
         end
 
         def read_operator_write(node, span)

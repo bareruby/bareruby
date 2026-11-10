@@ -68,7 +68,20 @@ module BareRuby
             when :self then self_literal
             when :local_write then @result.create_assignment(variable(children.first), lower(children.last))
             when :and then @result.create_binary("&&", *children.map { lower(it) })
+            when :if then conditional(*children)
             else @arrays.lower(node)
+            end
+          end
+
+          def conditional(condition, consequent, alternative)
+            @result.create_conditional(truth(condition), lower(consequent), lower(alternative))
+          end
+
+          def truth(condition)
+            case @tast.type_of(condition)
+            when :Bool then lower(condition)
+            when :nil then @result.create_binary(",", lower(condition), @result.create_literal("false"))
+            else @result.create_binary(",", lower(condition), @result.create_literal("true"))
             end
           end
 

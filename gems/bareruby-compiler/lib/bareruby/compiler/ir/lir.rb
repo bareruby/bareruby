@@ -45,6 +45,10 @@ module BareRuby
 
       def create_assignment(target, value) = { kind: :assignment, target:, value: }
 
+      def create_conditional(condition, consequent, alternative)
+        { kind: :conditional, condition:, consequent:, alternative: }
+      end
+
       def create_dereference(value) = { kind: :dereference, value: }
 
       def create_list(values) = { kind: :list, values: }

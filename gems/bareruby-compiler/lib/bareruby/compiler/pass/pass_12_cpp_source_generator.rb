@@ -98,8 +98,13 @@ module BareRuby
           end
         end
 
+        def conditional_expression(node)
+          "(#{expression(node[:condition])} ? #{expression(node[:consequent])} : #{expression(node[:alternative])})"
+        end
+
         def access_expression(node)
           case node[:kind]
+          when :conditional then conditional_expression(node)
           when :binary then "(#{expression(node[:left])} #{node[:operator]} #{expression(node[:right])})"
           when :member then "#{expression(node[:object])}->#{node[:member]}"
           when :element then "#{expression(node[:array])}[#{expression(node[:index])}]"

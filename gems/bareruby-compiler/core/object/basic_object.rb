@@ -8,6 +8,8 @@ class BasicObject
 
   def ==(other) = equal?(other)
 
+  def ! = self ? false : true
+
   def equal?(other) = __id__ == other.__id__
 
   # rubocop:disable-next Naming/MethodName -- BasicObject is the class that defines __id__
