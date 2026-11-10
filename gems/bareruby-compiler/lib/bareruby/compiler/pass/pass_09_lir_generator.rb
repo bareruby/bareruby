@@ -16,6 +16,7 @@ module BareRuby
         def run
           @result = LIR.new
           add_native_classes
+          @result.array_length_type = @names.cpp_type(:Int)
           object_classes.each { @result.add_struct(["BareRuby"], it) }
           @tast.functions.each { add_function(it) }
           add_main
@@ -43,12 +44,14 @@ module BareRuby
                                      @names.cpp_type(row[:returns]))
         end
 
-        def object_classes = @tast.functions.filter_map { it[:self_type].last if @names.instance_method?(it) }.uniq
+        def object_classes
+          @tast.functions.filter_map { it[:self_type].last if it[:self_type].first == :instance }.uniq
+        end
 
         def add_function(function)
           @result.add_function(@names.function_name(function), @names.cpp_type(function[:return_type]),
                                hidden_parameters(function) + parameters(function),
-                               body(function[:body], function[:return_type]))
+                               body(function[:locals], function[:body], function[:return_type]))
         end
 
         def hidden_parameters(function)
@@ -63,11 +66,16 @@ module BareRuby
         end
 
         def add_main
-          body = body(@tast.statements, :nil)
+          body = body(@tast.top_level_locals, @tast.statements, :nil)
           @result.add_function("main", "int", [], body + [@result.create_return(@result.create_literal("0"))])
         end
 
-        def body(nodes, return_type) = FunctionBody.new(@tast, @result, @names).lower_statements(nodes, return_type)
+        def body(locals, nodes, return_type)
+          definitions = locals.map do |name, type|
+            @result.create_variable_definition(@names.cpp_type(type), @names.variable_name(name))
+          end
+          definitions + FunctionBody.new(@tast, @result, @names).lower_statements(nodes, return_type)
+        end
       end
     end
   end

@@ -18,12 +18,12 @@ module BareRuby
         def run
           @result = TypedAST.new
           @definitions = Definitions.new(@brast, @result).run
+          @expressions = Expressions.new(@brast, @result, @definitions, self)
           @specializer = Specializer.new(@result, self)
-          @definitions.each_native_method do |owner, path, rows|
-            @result.add_native_method(path, "BareRuby::#{owner}", rows)
-          end
+          add_native_methods
           scope = { self: TOP_LEVEL_SELF, locals: {}, forwarded: nil }
           @definitions.statements.each { @result.add_statement(infer(it, scope)) }
+          @result.top_level_locals = scope[:locals]
           self
         end
 
@@ -35,14 +35,20 @@ module BareRuby
           when :constant then @result.create_class_reference(value)
           when :boolean then @result.create_boolean(value)
           when :integer then @result.create_integer(value)
-          else @definitions.error(node, "unsupported expression #{@brast.node_type(node)}")
+          else @expressions.infer(node, scope)
           end
         end
 
         private
 
+        def add_native_methods
+          @definitions.each_native_method do |owner, path, rows|
+            @result.add_native_method(path, "BareRuby::#{owner}", rows)
+          end
+        end
+
         def infer_call(node, scope)
-          return infer_new_instance(node, scope) if @definitions.primitive_call?(node, :new_instance)
+          return infer_primitive_call(node, scope) if primitive_call?(node)
 
           receiver_node, name, argument_nodes = @brast.children_of(node)
           receiver = receiver_node && infer(receiver_node, scope)
@@ -53,6 +59,16 @@ module BareRuby
 
           function = @specializer.specialize(owner, name, method, self_type, types_of(arguments))
           @result.create_method_call(function, receiver, arguments)
+        end
+
+        def primitive_call?(node)
+          @definitions.primitive_call?(node, :new_instance) || @expressions.array_primitive?(node)
+        end
+
+        def infer_primitive_call(node, scope)
+          return infer_new_instance(node, scope) if @definitions.primitive_call?(node, :new_instance)
+
+          @expressions.infer_array_primitive(node, scope)
         end
 
         def find_method(node, self_type, name)
@@ -105,4 +121,5 @@ module BareRuby
 end
 
 require_relative "pass_05_type_inferrer/definitions"
+require_relative "pass_05_type_inferrer/expressions"
 require_relative "pass_05_type_inferrer/specializer"

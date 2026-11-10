@@ -15,12 +15,15 @@ module BareRuby
             in :Int then "int#{@int_width}_t"
             in :nil then "void"
             in [:instance, class_name] then "BareRuby::#{class_name}*"
+            in [:array, element_type] then "#{array_type(element_type)}*"
             end
           end
 
-          def instance_method?(function) = function[:self_type].first == :instance
+          def array_type(element_type) = "BareRuby::Array<#{cpp_type(element_type)}>"
 
-          def function_name(function) = "bareruby_#{function[:name]}"
+          def instance_method?(function) = %i[instance array].include?(function[:self_type].first)
+
+          def function_name(function) = "bareruby_#{function[:name].gsub(/\W/) { format("_%02x", it.ord) }}"
 
           def variable_name(name) = "variable_#{name}"
         end

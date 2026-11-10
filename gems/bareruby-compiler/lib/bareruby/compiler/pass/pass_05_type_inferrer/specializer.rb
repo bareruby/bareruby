@@ -33,7 +33,7 @@ module BareRuby
             scope = scope_of(function, method)
             body = method[:body].map { @inferrer.infer(it, scope) }
             function.merge!(body:, return_type: body.empty? ? :nil : @result.type_of(body.last),
-                            allocates: scope[:allocates])
+                            allocates: scope[:allocates], locals: scope[:locals].except(*scope[:parameters]))
             @result.add_function(function)
             function
           end
@@ -41,7 +41,7 @@ module BareRuby
           def scope_of(function, method)
             parameters = function[:parameters]
             forwarded = Specializer.forwarding?(method) ? parameters.map { @result.create_local(*it) } : nil
-            { self: function[:self_type], locals: parameters.to_h, forwarded: }
+            { self: function[:self_type], locals: parameters.to_h, parameters: parameters.map(&:first), forwarded: }
           end
         end
       end

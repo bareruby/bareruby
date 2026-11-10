@@ -30,6 +30,16 @@ module BareRuby
 
       def create_local(name, span) = build(:local, [name], span)
 
+      def create_local_write(name, value, span) = build(:local_write, [name, value], span)
+
+      def create_self(span) = build(:self, [], span)
+
+      def create_array(elements, span) = build(:array, [elements], span)
+
+      def create_while(condition, body, span) = build(:while, [condition, body], span)
+
+      def create_and(left, right, span) = build(:and, [left, right], span)
+
       def create_forwarding(span) = build(:forwarding, [], span)
 
       def create_boolean(value, span) = build(:boolean, [value], span)
