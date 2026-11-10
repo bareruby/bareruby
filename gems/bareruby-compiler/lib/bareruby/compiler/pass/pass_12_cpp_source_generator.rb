@@ -28,7 +28,16 @@ module BareRuby
 
         def main_source
           includes = (["<cstdint>"] + @lir.headers.map { "\"#{it[:name]}\"" }).map { "#include #{it}\n" }.join
-          includes + structs + prototypes + @lir.functions.map { definition(it) }.join
+          includes + array_struct + structs + prototypes + definitions
+        end
+
+        def definitions = @lir.functions.map { definition(it) }.join
+
+        def array_struct
+          length = @lir.array_length_type
+          fields = "  #{length} length;\n  #{length} capacity;\n  T* elements;\n"
+          body = "template <typename T>\nstruct Array {\n#{fields}};\n"
+          in_namespaces(["BareRuby"], body)
         end
 
         def structs = @lir.structs.map { in_namespaces(it[:namespaces], "struct #{it[:name]} {};\n") }.join
@@ -43,23 +52,40 @@ module BareRuby
 
         def signature(function) = "#{function[:return_type]} #{function[:name]}(#{parameter_list(function)})"
 
-        def definition(function)
-          "#{signature(function)} {\n#{function[:body].map { "  #{statement(it)};\n" }.join}}\n"
-        end
+        def definition(function) = "#{signature(function)} {\n#{block(function[:body], "  ")}}\n"
 
-        def statement(node)
+        def block(statements, indent) = statements.map { "#{indent}#{statement(it, indent)};\n" }.join
+
+        def statement(node, indent)
           case node[:kind]
           when :return then "return #{expression(node[:value])}"
-          when :variable_definition then "#{node[:type]} #{node[:name]}{}"
+          when :variable_definition then "#{node[:type]} #{node[:name]}{#{arguments(node[:values])}}"
           when :expression_statement then expression(node[:value])
+          when :while then while_statement(node, indent)
           end
         end
 
+        def while_statement(node, indent)
+          "while (#{expression(node[:condition])}) {\n#{block(node[:body], "#{indent}  ")}#{indent}}"
+        end
+
+        def arguments(nodes) = nodes.map { expression(it) }.join(", ")
+
         def expression(node)
           case node[:kind]
-          when :call then "#{node[:function]}(#{node[:arguments].map { expression(it) }.join(", ")})"
+          when :call then "#{node[:function]}(#{arguments(node[:arguments])})"
           when :address then "&#{node[:name]}"
           when :literal then node[:text]
+          else compound_expression(node)
+          end
+        end
+
+        def compound_expression(node)
+          case node[:kind]
+          when :assignment then "#{node[:name]} = #{expression(node[:value])}"
+          when :binary then "(#{expression(node[:left])} #{node[:operator]} #{expression(node[:right])})"
+          when :member then "#{expression(node[:object])}->#{node[:member]}"
+          when :element then "#{expression(node[:array])}[#{expression(node[:index])}]"
           end
         end
       end

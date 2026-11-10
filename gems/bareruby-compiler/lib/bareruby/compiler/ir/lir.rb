@@ -3,6 +3,7 @@
 module BareRuby
   module Compiler
     class LIR
+      attr_accessor :array_length_type
       attr_reader :headers, :structs, :functions, :native_sources
 
       def initialize
@@ -40,7 +41,17 @@ module BareRuby
 
       def create_address(name) = { kind: :address, name: }
 
-      def create_variable_definition(type, name) = { kind: :variable_definition, type:, name: }
+      def create_variable_definition(type, name, values = []) = { kind: :variable_definition, type:, name:, values: }
+
+      def create_assignment(name, value) = { kind: :assignment, name:, value: }
+
+      def create_binary(operator, left, right) = { kind: :binary, operator:, left:, right: }
+
+      def create_member(object, member) = { kind: :member, object:, member: }
+
+      def create_element(array, index) = { kind: :element, array:, index: }
+
+      def create_while(condition, body) = { kind: :while, condition:, body: }
 
       def create_expression_statement(value) = { kind: :expression_statement, value: }
 

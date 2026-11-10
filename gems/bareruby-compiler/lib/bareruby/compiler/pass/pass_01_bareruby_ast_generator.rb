@@ -38,8 +38,32 @@ module BareRuby
           when Prism::ClassNode then @result.create_class_definition(node.name, read_statements(node.body), span)
           when Prism::DefNode then read_method_definition(node, span)
           when Prism::CallNode then read_call(node, span)
+          else read_expression(node, span)
+          end
+        end
+
+        def read_expression(node, span)
+          case node
+          when Prism::LocalVariableWriteNode then @result.create_local_write(node.name, read(node.value), span)
+          when Prism::LocalVariableOperatorWriteNode then read_operator_write(node, span)
+          when Prism::ArrayNode then @result.create_array(node.elements.map { read(it) }, span)
+          when Prism::SelfNode then @result.create_self(span)
+          else read_control(node, span)
+          end
+        end
+
+        def read_control(node, span)
+          case node
+          when Prism::WhileNode then @result.create_while(read(node.predicate), read_statements(node.statements), span)
+          when Prism::AndNode then @result.create_and(read(node.left), read(node.right), span)
           else read_literal(node, span)
           end
+        end
+
+        def read_operator_write(node, span)
+          call = @result.create_call(@result.create_local(node.name, span), node.binary_operator, [read(node.value)],
+                                     span)
+          @result.create_local_write(node.name, call, span)
         end
 
         def read_method_definition(node, span)
