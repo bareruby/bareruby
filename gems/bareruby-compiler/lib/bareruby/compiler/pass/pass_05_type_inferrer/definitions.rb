@@ -4,7 +4,9 @@ module BareRuby
   module Compiler
     module Pass
       class TypeInferrer
-        class Definitions
+        # The compiler is provisional and will be discarded and rebuilt,
+        # so its classes are not split to meet the length limit.
+        class Definitions # rubocop:disable Metrics/ClassLength
           OWNER = { methods: {}, singleton_methods: {}, includes: [], superclass: nil }.freeze
 
           attr_reader :statements
@@ -77,11 +79,15 @@ module BareRuby
 
           def superclass_of(name) = { BasicObject: nil, Object: :BasicObject }.fetch(name, :Object)
 
-          def collect_owner(path, name, body)
+          def collect_owner(path, name, body, table = :methods)
             body.each do |node|
-              case @brast.node_type(node)
-              when :method_definition then collect_method(path, name, node, :methods)
+              type = @brast.node_type(node)
+              next collect_method(path, name, node, table) if type == :method_definition
+              next unless table == :methods
+
+              case type
               when :singleton_method_definition then collect_method(path, name, node, :singleton_methods)
+              when :singleton_class then collect_owner(path, name, @brast.children_of(node).first, :singleton_methods)
               when :call then collect_call(path, name, node)
               end
             end

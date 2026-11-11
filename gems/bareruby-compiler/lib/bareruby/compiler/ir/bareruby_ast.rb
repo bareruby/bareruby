@@ -24,6 +24,8 @@ module BareRuby
         build(:method_definition, [name, parameters, body], span)
       end
 
+      def create_singleton_class(body, span) = build(:singleton_class, [body], span)
+
       def create_singleton_method_definition(name, parameters, body, span)
         build(:singleton_method_definition, [name, parameters, body], span)
       end
