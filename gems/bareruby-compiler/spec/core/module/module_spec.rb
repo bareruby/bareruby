@@ -114,5 +114,45 @@ RSpec.describe "Module" do
 
       it { is_expected.to eq("3\n") }
     end
+
+    context "with a name that no method has" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            undef_method :missing
+          end
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method 'missing' for class 'Foo'/) }
+    end
+
+    context "with the same name twice" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            def answer = 1
+            undef_method :answer
+            undef_method :answer
+          end
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method 'answer' for class 'Foo'/) }
+    end
+
+    context "with a name that no class-side method has" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            class << self
+              undef_method :missing
+            end
+          end
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method 'missing' for class 'Foo'/) }
+    end
   end
 end
