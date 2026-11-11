@@ -74,9 +74,18 @@ module BareRuby
         end
 
         def read_method_definition(node, span)
-          parameters = node.parameters ? node.parameters.requireds.map(&:name) : []
-          parameters << FORWARDING if node.parameters&.keyword_rest.is_a?(Prism::ForwardingParameterNode)
-          @result.create_method_definition(node.name, parameters, read_statements(node.body), span)
+          parameters = read_parameters(node.parameters)
+          body = read_statements(node.body)
+          singleton = node.receiver.is_a?(Prism::SelfNode)
+          return @result.create_singleton_method_definition(node.name, parameters, body, span) if singleton
+
+          @result.create_method_definition(node.name, parameters, body, span)
+        end
+
+        def read_parameters(node)
+          parameters = node ? node.requireds.map(&:name) : []
+          parameters << FORWARDING if node&.keyword_rest.is_a?(Prism::ForwardingParameterNode)
+          parameters
         end
 
         def read_call(node, span)

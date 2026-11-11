@@ -5,6 +5,8 @@ module BareRuby
     module Pass
       class TypeInferrer
         class Definitions
+          OWNER = { methods: {}, singleton_methods: {}, includes: [], superclass: nil }.freeze
+
           attr_reader :statements
 
           def initialize(bareruby_ast, typed_ast)
@@ -13,7 +15,7 @@ module BareRuby
           end
 
           def run
-            @owners = Hash.new { |owners, name| owners[name] = { methods: {}, includes: [], superclass: nil } }
+            @owners = Hash.new { |owners, name| owners[name] = OWNER.transform_values(&:dup) }
             @statements = []
             @brast.each_file { |path, statements| collect(path, statements) }
             self
@@ -32,6 +34,10 @@ module BareRuby
           end
 
           def lookup(name, method_name) = find_in(ancestors(name), :methods, method_name)
+
+          def lookup_singleton(name, method_name)
+            find_in(superclasses(name), :singleton_methods, method_name) || lookup(:Class, method_name)
+          end
 
           def primitive_call?(node, name)
             return false unless @brast.node_type(node) == :call
@@ -74,15 +80,16 @@ module BareRuby
           def collect_owner(path, name, body)
             body.each do |node|
               case @brast.node_type(node)
-              when :method_definition then collect_method(path, name, node)
+              when :method_definition then collect_method(path, name, node, :methods)
+              when :singleton_method_definition then collect_method(path, name, node, :singleton_methods)
               when :call then collect_call(path, name, node)
               end
             end
           end
 
-          def collect_method(path, owner, node)
+          def collect_method(path, owner, node, table)
             name, parameters, body = @brast.children_of(node)
-            @owners[owner][:methods][name] = { path:, parameters:, body:, rows: nil }
+            @owners[owner][table][name] = { path:, parameters:, body:, rows: nil }
           end
 
           def collect_call(path, owner, node)
@@ -126,6 +133,8 @@ module BareRuby
             parents += ancestors(definition[:superclass]) if definition[:superclass]
             ([name] + parents).uniq
           end
+
+          def superclasses(name) = [name] + (@owners[name][:superclass]&.then { superclasses(it) } || [])
         end
       end
     end

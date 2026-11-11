@@ -24,6 +24,10 @@ module BareRuby
         build(:method_definition, [name, parameters, body], span)
       end
 
+      def create_singleton_method_definition(name, parameters, body, span)
+        build(:singleton_method_definition, [name, parameters, body], span)
+      end
+
       def create_call(receiver, name, arguments, span) = build(:call, [receiver, name, arguments], span)
 
       def create_constant(name, span) = build(:constant, [name], span)
