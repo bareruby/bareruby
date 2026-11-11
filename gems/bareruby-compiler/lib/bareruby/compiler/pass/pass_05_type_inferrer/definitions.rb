@@ -31,13 +31,7 @@ module BareRuby
             end
           end
 
-          def lookup(name, method_name)
-            ancestors(name).each do |owner|
-              method = @owners[owner][:methods][method_name]
-              return [owner, method] if method
-            end
-            nil
-          end
+          def lookup(name, method_name) = find_in(ancestors(name), :methods, method_name)
 
           def primitive_call?(node, name)
             return false unless @brast.node_type(node) == :call
@@ -54,6 +48,11 @@ module BareRuby
           end
 
           private
+
+          def find_in(owners, table, method_name)
+            owner = owners.find { @owners[it][table].key?(method_name) }
+            owner && [owner, @owners[owner][table][method_name]]
+          end
 
           def collect(path, statements)
             statements.each do |node|
