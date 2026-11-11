@@ -80,5 +80,39 @@ RSpec.describe "Module" do
 
       it { is_expected.to eq("2\n") }
     end
+
+    context "with new in a class << self body" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            class << self
+              undef_method :new
+            end
+          end
+          Foo.new
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method 'new' for Class/) }
+    end
+
+    context "with new of another class after a class << self body undefines it" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            class << self
+              undef_method :new
+            end
+          end
+
+          class Bar
+            def answer = 3
+          end
+          puts Bar.new.answer
+        RUBY
+      end
+
+      it { is_expected.to eq("3\n") }
+    end
   end
 end
