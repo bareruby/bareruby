@@ -59,7 +59,8 @@ module BareRuby
 
           def find_in(owners, table, method_name)
             owner = owners.find { @owners[it][table].key?(method_name) }
-            owner && [owner, @owners[owner][table][method_name]]
+            method = owner && @owners[owner][table][method_name]
+            [owner, method] if method && !method[:undefined]
           end
 
           def collect(path, statements)
@@ -100,8 +101,15 @@ module BareRuby
 
           def collect_call(path, owner, node)
             return collect_native_def(path, owner, node) if primitive_call?(node, :native_def)
+            return collect_undef(owner, node, :methods) if undef_method?(node)
 
             @owners[owner][:includes] << include_target(node)
+          end
+
+          def undef_method?(node) = @brast.children_of(node).first(2) == [nil, :undef_method]
+
+          def collect_undef(owner, node, table)
+            @brast.children_of(node)[2].each { @owners[owner][table][value_of(it)] = { undefined: true, rows: nil } }
           end
 
           def collect_native_def(path, owner, node)
