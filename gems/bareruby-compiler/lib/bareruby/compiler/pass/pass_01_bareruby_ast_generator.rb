@@ -6,7 +6,9 @@ require_relative "../ir/bareruby_ast"
 module BareRuby
   module Compiler
     module Pass
-      class BareRubyAstGenerator
+      # The compiler is provisional and will be discarded and rebuilt,
+      # so its classes are not split to meet the length limit.
+      class BareRubyAstGenerator # rubocop:disable Metrics/ClassLength
         FORWARDING = :"..."
 
         attr_reader :result
@@ -37,6 +39,7 @@ module BareRuby
           when Prism::ModuleNode then @result.create_module_definition(node.name, read_statements(node.body), span)
           when Prism::ClassNode then @result.create_class_definition(node.name, read_statements(node.body), span)
           when Prism::DefNode then read_method_definition(node, span)
+          when Prism::SingletonClassNode then read_singleton_class(node, span)
           when Prism::CallNode then read_call(node, span)
           else read_expression(node, span)
           end
@@ -80,6 +83,12 @@ module BareRuby
           return @result.create_singleton_method_definition(node.name, parameters, body, span) if singleton
 
           @result.create_method_definition(node.name, parameters, body, span)
+        end
+
+        def read_singleton_class(node, span)
+          return read_literal(node, span) unless node.expression.is_a?(Prism::SelfNode)
+
+          @result.create_singleton_class(read_statements(node.body), span)
         end
 
         def read_parameters(node)
