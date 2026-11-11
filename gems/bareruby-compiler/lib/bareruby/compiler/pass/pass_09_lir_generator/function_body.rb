@@ -12,6 +12,7 @@ module BareRuby
             @prelude = []
             @temporaries = 0
             @arrays = ArrayLowering.new(typed_ast, lir, names, self)
+            @calls = CallLowering.new(typed_ast, lir, names, self)
           end
 
           def lower_statements(nodes, return_type)
@@ -26,6 +27,7 @@ module BareRuby
 
           def lower(node)
             return @arrays.lower(node) if ArrayLowering::NODE_TYPES.include?(@tast.node_type(node))
+            return @calls.lower(node) if CallLowering::NODE_TYPES.include?(@tast.node_type(node))
 
             lower_value(node)
           end
@@ -37,6 +39,8 @@ module BareRuby
           end
 
           def self_literal = @result.create_literal("self")
+
+          def hoist(statement) = @prelude << statement
 
           private
 
@@ -53,11 +57,9 @@ module BareRuby
           def lower_value(node)
             children = @tast.children_of(node)
             case @tast.node_type(node)
-            when :native_call then lower_native_call(*children)
-            when :method_call then lower_method_call(*children)
-            when :new_instance then lower_new_instance(*children)
             when :local then @result.create_literal(@names.variable_name(children.first))
             when :boolean, :integer then @result.create_literal(children.first.to_s)
+            when :nil then @result.create_literal("nullptr")
             else lower_expression(node)
             end
           end
@@ -90,34 +92,6 @@ module BareRuby
           def lower_while(condition, body)
             condition = lower(condition)
             @prelude.slice!(0..) + [@result.create_while(condition, lower_statements(body, :nil))]
-          end
-
-          def lower_native_call(namespace, row, receiver, arguments)
-            hidden = []
-            hidden << (receiver ? lower(receiver) : self_literal) if row[:parameters].key?(:self)
-            @result.create_call("#{namespace}::#{row[:function]}", hidden + arguments.map { lower(it) })
-          end
-
-          def lower_method_call(function, receiver, arguments)
-            hidden = []
-            hidden << (receiver ? lower(receiver) : self_literal) if @names.instance_method?(function)
-            hidden += storages(function)
-            @result.create_call(@names.function_name(function), hidden + arguments.map { lower(it) })
-          end
-
-          def storages(function)
-            storages = []
-            storages << temporary(@names.struct_name(function[:allocates])) if function[:allocates]
-            return_type = function[:return_type]
-            storages << temporary(@names.array_type(return_type.last)) if return_type in [:array, _]
-            storages
-          end
-
-          def lower_new_instance(initializer, arguments)
-            storage = @result.create_literal("storage")
-            call = @result.create_call(@names.function_name(initializer), [storage] + arguments.map { lower(it) })
-            @prelude << @result.create_expression_statement(call)
-            storage
           end
         end
       end

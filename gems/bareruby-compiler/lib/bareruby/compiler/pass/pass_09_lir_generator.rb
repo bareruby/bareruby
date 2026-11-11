@@ -74,7 +74,9 @@ module BareRuby
         end
 
         def parameters(function)
-          function[:parameters].map { |name, type| [@names.variable_name(name), @names.cpp_type(type)] }
+          function[:parameters].filter_map do |name, type|
+            [@names.variable_name(name), @names.cpp_type(type)] unless type == :nil
+          end
         end
 
         def add_main
@@ -96,3 +98,4 @@ end
 require_relative "pass_09_lir_generator/cpp_names"
 require_relative "pass_09_lir_generator/function_body"
 require_relative "pass_09_lir_generator/array_lowering"
+require_relative "pass_09_lir_generator/call_lowering"
