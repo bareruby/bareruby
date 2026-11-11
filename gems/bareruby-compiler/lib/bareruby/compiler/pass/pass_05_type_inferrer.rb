@@ -88,7 +88,10 @@ module BareRuby
 
         def find_method(node, self_type, name)
           class_name = @result.class_of(self_type)
-          found = @definitions.lookup(class_name, name)
+          found = case self_type
+                  in [:class, owner] then @definitions.lookup_singleton(owner, name)
+                  else @definitions.lookup(class_name, name)
+                  end
           @definitions.error(node, "undefined method '#{name}' for #{class_name}") unless found
 
           found
