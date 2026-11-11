@@ -121,7 +121,13 @@ module BareRuby
           def undef_method?(node) = @brast.children_of(node).first(2) == [nil, :undef_method]
 
           def collect_undef(owner, node, table)
-            @brast.children_of(node)[2].each { @owners[owner][table][value_of(it)] = { undefined: true, rows: nil } }
+            @brast.children_of(node)[2].each do |argument|
+              name = value_of(argument)
+              found = table == :methods ? lookup(owner, name) : lookup_singleton(owner, name)
+              kind = @owners[owner][:class] ? "class" : "module"
+              error(node, "undefined method '#{name}' for #{kind} '#{owner}'") unless found
+              @owners[owner][table][name] = { undefined: true, rows: nil }
+            end
           end
 
           def collect_native_def(path, owner, node)
