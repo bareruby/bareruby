@@ -35,10 +35,11 @@ module BareRuby
             end
           end
 
-          def lookup(name, method_name) = find_in(ancestors(name), :methods, method_name)
+          def lookup(name, method_name) = callable(find_in(ancestors(name), :methods, method_name))
 
           def lookup_singleton(name, method_name)
-            find_in(superclasses(name), :singleton_methods, method_name) || lookup(:Class, method_name)
+            found = find_in(superclasses(name), :singleton_methods, method_name)
+            found ? callable(found) : lookup(:Class, method_name)
           end
 
           def primitive_call?(node, name)
@@ -59,8 +60,11 @@ module BareRuby
 
           def find_in(owners, table, method_name)
             owner = owners.find { @owners[it][table].key?(method_name) }
-            method = owner && @owners[owner][table][method_name]
-            [owner, method] if method && !method[:undefined]
+            owner && [owner, @owners[owner][table][method_name]]
+          end
+
+          def callable(found)
+            found unless found&.last&.fetch(:undefined, false)
           end
 
           def collect(path, statements)
@@ -82,15 +86,24 @@ module BareRuby
 
           def collect_owner(path, name, body, table = :methods)
             body.each do |node|
-              type = @brast.node_type(node)
-              next collect_method(path, name, node, table) if type == :method_definition
-              next unless table == :methods
-
-              case type
-              when :singleton_method_definition then collect_method(path, name, node, :singleton_methods)
-              when :singleton_class then collect_owner(path, name, @brast.children_of(node).first, :singleton_methods)
-              when :call then collect_call(path, name, node)
+              case @brast.node_type(node)
+              when :method_definition then collect_method(path, name, node, table)
+              when :call then collect_owner_call(path, name, node, table)
+              else collect_nested(path, name, node) if table == :methods
               end
+            end
+          end
+
+          def collect_owner_call(path, name, node, table)
+            return collect_undef(name, node, table) if undef_method?(node)
+
+            collect_call(path, name, node) if table == :methods
+          end
+
+          def collect_nested(path, name, node)
+            case @brast.node_type(node)
+            when :singleton_method_definition then collect_method(path, name, node, :singleton_methods)
+            when :singleton_class then collect_owner(path, name, @brast.children_of(node).first, :singleton_methods)
             end
           end
 
@@ -101,7 +114,6 @@ module BareRuby
 
           def collect_call(path, owner, node)
             return collect_native_def(path, owner, node) if primitive_call?(node, :native_def)
-            return collect_undef(owner, node, :methods) if undef_method?(node)
 
             @owners[owner][:includes] << include_target(node)
           end
