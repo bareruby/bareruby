@@ -64,4 +64,20 @@ RSpec.describe "Integer" do
       it { is_expected.to eq("7\n") }
     end
   end
+
+  describe "#zero?" do
+    subject(:output) { output_of(source) }
+
+    context "with zero" do
+      let(:source) { "puts 0.zero?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a positive Int" do
+      let(:source) { "puts 7.zero?" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
