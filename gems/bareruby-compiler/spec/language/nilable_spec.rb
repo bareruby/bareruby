@@ -68,3 +68,44 @@ RSpec.describe "Int?" do
     end
   end
 end
+
+RSpec.describe "Float?" do
+  include CoreProgram
+
+  describe "narrowed by its truth" do
+    subject(:output) { output_of(source) }
+
+    context "with a Float assigned under a true condition" do
+      let(:source) do
+        <<~RUBY
+          x = 1.5 if 1 < 2
+          puts(x ? x + 1.0 == 2.5 : false)
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an assignment skipped under a false condition" do
+      let(:source) do
+        <<~RUBY
+          x = 1.5 if 2 < 1
+          puts(x ? true : false)
+        RUBY
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with 0.0 assigned" do
+      let(:source) do
+        <<~RUBY
+          x = 0.0 if 1 < 2
+          puts(x ? true : false)
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
+end
