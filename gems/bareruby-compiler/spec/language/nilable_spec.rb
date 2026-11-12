@@ -108,6 +108,43 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "narrowed by !" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(!x ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(!x ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with nil? negated" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(!x.nil? ? x + 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
