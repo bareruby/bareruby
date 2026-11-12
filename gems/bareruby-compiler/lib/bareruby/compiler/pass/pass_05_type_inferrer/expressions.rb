@@ -52,12 +52,19 @@ module BareRuby
           private
 
           def infer_operator(node, scope)
+            return infer_if(*@brast.children_of(node), scope) if @brast.node_type(node) == :if
+
             operands = @brast.children_of(node).map { @inferrer.infer(it, scope) }
-            case @brast.node_type(node)
-            when :and then @result.create_and(*operands)
-            when :or then @result.create_or(*operands)
-            else @result.create_if(*operands)
-            end
+            @brast.node_type(node) == :and ? @result.create_and(*operands) : @result.create_or(*operands)
+          end
+
+          def infer_if(condition_node, consequent_node, alternative_node, scope)
+            flow = @inferrer.flow
+            condition, true_env, false_env = @inferrer.conditions.infer(condition_node, scope)
+            consequent, consequent_env = flow.branch(scope, true_env) { @inferrer.infer(consequent_node, scope) }
+            alternative, alternative_env = flow.branch(scope, false_env) { @inferrer.infer(alternative_node, scope) }
+            scope[:env] = flow.merge(scope, consequent_env, alternative_env)
+            @result.create_if(condition, consequent, alternative)
           end
 
           def infer_constant_path(node, parent, name)
@@ -70,7 +77,7 @@ module BareRuby
 
           def infer_local_write(name, value_node, scope)
             value = @inferrer.infer(value_node, scope)
-            scope[:locals][name] ||= @result.type_of(value)
+            @inferrer.flow.assign(scope, name, @result.type_of(value))
             @result.create_local_write(name, value)
           end
 

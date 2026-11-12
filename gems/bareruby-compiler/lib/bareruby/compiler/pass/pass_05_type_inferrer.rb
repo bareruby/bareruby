@@ -11,7 +11,7 @@ module BareRuby
         TOP_LEVEL_SELF = %i[instance Object].freeze
         FORWARDING = :"..."
 
-        attr_reader :result
+        attr_reader :result, :flow, :conditions
 
         def initialize(bareruby_ast, pointer_size)
           @brast = bareruby_ast
@@ -21,10 +21,7 @@ module BareRuby
         def run
           @result = TypedAST.new
           @definitions = Definitions.new(@brast, @result).run
-          @expressions = Expressions.new(@brast, @result, @definitions, self, @pointer_size)
-          @native_rows = NativeRows.new(@brast, @definitions)
-          @specializer = Specializer.new(@result, self)
-          @bool_calls = BoolCalls.new(@result, self)
+          create_helpers
           add_native_methods
           infer_top_level
           @result.classes = @definitions.classes
@@ -35,7 +32,7 @@ module BareRuby
           value = @brast.children_of(node).first
           case @brast.node_type(node)
           when :call then infer_call(node, scope)
-          when :local then @result.create_local(value, scope[:locals].fetch(value))
+          when :local then @result.create_local(value, @flow.read(scope, value))
           when :constant then @result.create_class_reference(value)
           else infer_literal(node, value, scope)
           end
@@ -68,6 +65,15 @@ module BareRuby
 
         private
 
+        def create_helpers
+          @flow = Flow.new(@result)
+          @conditions = Conditions.new(@brast, @result, self, @flow)
+          @expressions = Expressions.new(@brast, @result, @definitions, self, @pointer_size)
+          @native_rows = NativeRows.new(@brast, @definitions)
+          @specializer = Specializer.new(@result, self)
+          @bool_calls = BoolCalls.new(@result, self)
+        end
+
         def infer_literal(node, value, scope)
           case @brast.node_type(node)
           when :boolean then @result.create_boolean(value)
@@ -80,7 +86,7 @@ module BareRuby
         end
 
         def infer_top_level
-          scope = { self: TOP_LEVEL_SELF, locals: {}, forwarded: nil }
+          scope = { self: TOP_LEVEL_SELF, locals: {}, env: {}, forwarded: nil }
           @definitions.statements.each { @result.add_statement(infer(it, scope)) }
           @result.top_level_locals = scope[:locals]
         end
@@ -154,3 +160,5 @@ require_relative "pass_05_type_inferrer/expressions"
 require_relative "pass_05_type_inferrer/specializer"
 require_relative "pass_05_type_inferrer/native_rows"
 require_relative "pass_05_type_inferrer/bool_calls"
+require_relative "pass_05_type_inferrer/flow"
+require_relative "pass_05_type_inferrer/conditions"

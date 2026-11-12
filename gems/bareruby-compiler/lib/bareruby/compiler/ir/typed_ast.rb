@@ -5,6 +5,7 @@ module BareRuby
     class TypedAST
       VALUE_TYPES = %i[Bool Int UInt8 UInt64 Float Symbol].freeze
       TYPE_ALIASES = { Byte: :UInt8 }.freeze
+      NILABLE_VALUES = %i[Int Float].freeze
 
       attr_accessor :top_level_locals, :classes
       attr_reader :statements, :native_methods, :functions
@@ -61,7 +62,7 @@ module BareRuby
       def create_or(left, right) = build(:or, [left, right], :Bool)
 
       def create_if(condition, consequent, alternative)
-        build(:if, [condition, consequent, alternative], type_of(consequent))
+        build(:if, [condition, consequent, alternative], merge_types(type_of(consequent), type_of(alternative)))
       end
 
       def create_array(elements, element_type) = build(:array, [elements], [:array, element_type])
@@ -96,6 +97,15 @@ module BareRuby
         name = TYPE_ALIASES.fetch(name, name)
         VALUE_TYPES.include?(name) ? name : [:instance, name]
       end
+
+      def merge_types(first, second)
+        return first if first == second
+
+        values = [first, second].map { nilable?(it) ? it.last : it }.reject { it == :nil }.uniq
+        values.size == 1 && NILABLE_VALUES.include?(values.first) ? [:nilable, values.first] : first
+      end
+
+      def nilable?(type) = (type in [:nilable, _])
 
       def class_of(type)
         case type

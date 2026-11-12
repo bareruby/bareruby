@@ -60,6 +60,10 @@ module BareRuby
 
       def create_member(object, member) = { kind: :member, object:, member: }
 
+      def create_field(object, member) = { kind: :field, object:, member: }
+
+      def create_construction(type, values) = { kind: :construction, type:, values: }
+
       def create_element(array, index) = { kind: :element, array:, index: }
 
       def create_while(condition, body) = { kind: :while, condition:, body: }
