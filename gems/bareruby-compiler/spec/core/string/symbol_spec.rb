@@ -104,4 +104,56 @@ RSpec.describe "Symbol" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#<=>" do
+    subject(:output) { output_of(source) }
+
+    context "with a Symbol of the same name" do
+      let(:source) { "puts :ready <=> :ready" }
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with a Symbol whose name comes later" do
+      let(:source) { "puts :apple <=> :banana" }
+
+      it { is_expected.to eq("-1\n") }
+    end
+
+    context "with a Symbol whose name comes earlier but appears later in the program" do
+      let(:source) { "puts :banana <=> :apple" }
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with a Symbol whose name extends the receiver's name" do
+      let(:source) { "puts :ab <=> :abc" }
+
+      it { is_expected.to eq("-1\n") }
+    end
+
+    context "with names of digits" do
+      let(:source) { 'puts :"10" <=> :"9"' }
+
+      it { is_expected.to eq("-1\n") }
+    end
+
+    context "with a name whose bytes go on after a NUL byte" do
+      let(:source) { 'puts :"a\0b" <=> :a' }
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with a name that contains a double quote and a backslash" do
+      let(:source) { 'puts :"a\"\\\\" <=> :"a\""' }
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with a name of bytes above 0x7F" do
+      let(:source) { 'puts :"é" <=> :z' }
+
+      it { is_expected.to eq("1\n") }
+    end
+  end
 end
