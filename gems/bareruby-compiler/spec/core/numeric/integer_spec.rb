@@ -480,4 +480,20 @@ RSpec.describe "Integer" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#to_f" do
+    subject(:output) { output_of(source) }
+
+    context "with an Int" do
+      let(:source) { "puts 3.to_f == 3.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an Int beyond the binary32 precision" do
+      let(:source) { "puts 16777217.to_f == 16777216.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
