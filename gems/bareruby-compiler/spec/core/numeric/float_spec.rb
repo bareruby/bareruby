@@ -338,4 +338,26 @@ RSpec.describe "Float" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#zero?" do
+    subject(:output) { output_of(source) }
+
+    context "with zero" do
+      let(:source) { "puts 0.0.zero?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with negative zero" do
+      let(:source) { "puts(-0.0.zero?)" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a positive Float" do
+      let(:source) { "puts 1.5.zero?" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
