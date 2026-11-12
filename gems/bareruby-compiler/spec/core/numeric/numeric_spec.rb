@@ -149,4 +149,20 @@ RSpec.describe "Numeric" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#abs" do
+    subject(:output) { output_of(classes + source) }
+
+    context "with a positive value" do
+      let(:source) { "puts Plus.new.abs.positive?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a negative value" do
+      let(:source) { "puts Minus.new.abs.positive?" }
+
+      it { is_expected.to eq("9\nfalse\n") }
+    end
+  end
 end
