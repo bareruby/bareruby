@@ -79,3 +79,7 @@ bool BareRuby::Float::finite_p_ovl_float(float self) {
 float BareRuby::Float::plus_ovl_float_int(float self, int32_t other) {
   return self + static_cast<float>(other);
 }
+
+float BareRuby::Float::minus_ovl_float_int(float self, int32_t other) {
+  return self - static_cast<float>(other);
+}
