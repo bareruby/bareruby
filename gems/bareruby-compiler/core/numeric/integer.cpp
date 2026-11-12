@@ -95,3 +95,7 @@ float BareRuby::Integer::div_ovl_int_float(int32_t self, float other) {
 float BareRuby::Integer::modulo_ovl_int_float(int32_t self, float other) {
   return std::fmod(static_cast<float>(self), other);
 }
+
+bool BareRuby::Integer::eq_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) == other;
+}
