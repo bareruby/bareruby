@@ -8,4 +8,7 @@ class Numeric
 
   # rubocop:disable-next Style/NumericPredicate -- this defines negative? itself, so writing negative? here would call itself
   def negative? = !!(self < 0)
+
+  # rubocop:disable-next Style/NumericPredicate -- this defines zero? itself, so writing zero? here would call itself
+  def zero? = !!(self == 0)
 end
