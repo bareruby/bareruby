@@ -392,6 +392,21 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "as an argument of a native method" do
+    subject(:output) { output_of(source) }
+
+    context "with no native row for nil" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts x
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /no native_def of Kernel#puts accepts \(nil\)/) }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
