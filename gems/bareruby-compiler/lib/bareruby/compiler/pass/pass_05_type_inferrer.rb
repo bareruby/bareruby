@@ -38,20 +38,22 @@ module BareRuby
           end
         end
 
+        def call_on(node, receiver, scope)
+          _receiver_node, name, argument_nodes = @brast.children_of(node)
+          self_type = receiver ? @result.type_of(receiver) : scope[:self]
+          return @bool_calls.infer(node, receiver, [name, argument_nodes], scope) if self_type == :Bool
+          return @nilable_calls.infer(node, receiver, [name, argument_nodes], scope) if @result.nilable?(self_type)
+
+          owner, method = find_method(node, self_type, name)
+          arguments = infer_arguments(node, method, argument_nodes, scope)
+          call_method(node, [owner, method], receiver, self_type, arguments)
+        end
+
         def call_method(node, (owner, method), receiver, self_type, arguments)
           return call_native(node, [owner, method], [receiver, self_type], arguments) if method[:rows]
 
           function = @specializer.specialize(owner, @brast.children_of(node)[1], method, self_type, types_of(arguments))
           @result.create_method_call(function, receiver, arguments)
-        end
-
-        def call_native(node, (owner, method), (receiver, self_type), arguments)
-          types = types_of(arguments)
-          nilable = types.index { @result.nilable?(it) }
-          return @nilable_calls.split(node, [owner, method], [receiver, self_type], [arguments, nilable]) if nilable
-
-          row = @native_rows.select(node, owner, method, self_type, types)
-          @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
         end
 
         def infer_arguments(node, method, argument_nodes, scope)
@@ -69,6 +71,15 @@ module BareRuby
         end
 
         private
+
+        def call_native(node, (owner, method), (receiver, self_type), arguments)
+          types = types_of(arguments)
+          nilable = types.index { @result.nilable?(it) }
+          return @nilable_calls.split(node, [owner, method], [receiver, self_type], [arguments, nilable]) if nilable
+
+          row = @native_rows.select(node, owner, method, self_type, types)
+          @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
+        end
 
         def create_helpers
           @flow = Flow.new(@result)
@@ -109,21 +120,6 @@ module BareRuby
           receiver_node = @brast.children_of(node).first
           call_on(node, receiver_node && infer(receiver_node, scope), scope)
         end
-
-        public
-
-        def call_on(node, receiver, scope)
-          _receiver_node, name, argument_nodes = @brast.children_of(node)
-          self_type = receiver ? @result.type_of(receiver) : scope[:self]
-          return @bool_calls.infer(node, receiver, [name, argument_nodes], scope) if self_type == :Bool
-          return @nilable_calls.infer(node, receiver, [name, argument_nodes], scope) if @result.nilable?(self_type)
-
-          owner, method = find_method(node, self_type, name)
-          arguments = infer_arguments(node, method, argument_nodes, scope)
-          call_method(node, [owner, method], receiver, self_type, arguments)
-        end
-
-        private
 
         def primitive_call?(node)
           @definitions.primitive_call?(node, :new_instance) || @expressions.array_primitive?(node)
