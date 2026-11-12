@@ -222,4 +222,20 @@ RSpec.describe "Integer" do
       it { is_expected.to eq("-1\n") }
     end
   end
+
+  describe "#*" do
+    subject(:output) { output_of(source) }
+
+    context "with two positive Ints" do
+      let(:source) { "puts 7 * 8" }
+
+      it { is_expected.to eq("56\n") }
+    end
+
+    context "with a negative Int" do
+      let(:source) { "puts 7 * -8" }
+
+      it { is_expected.to eq("-56\n") }
+    end
+  end
 end
