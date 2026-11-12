@@ -243,6 +243,57 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "assigned by ||=" do
+    subject(:output) { output_of(source) }
+
+    context "with nil" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          x ||= 42
+          puts x + 1
+        RUBY
+      end
+
+      it { is_expected.to eq("43\n") }
+    end
+
+    context "with an Integer" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          x ||= 42
+          puts x + 1
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with 0" do
+      let(:source) do
+        <<~RUBY
+          x = 0 if 1 < 2
+          x ||= 42
+          puts x
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with a variable not assigned before" do
+      let(:source) do
+        <<~RUBY
+          x ||= 42
+          puts x
+        RUBY
+      end
+
+      it { is_expected.to eq("42\n") }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
