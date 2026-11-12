@@ -103,4 +103,20 @@ RSpec.describe "Numeric" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#zero?" do
+    subject(:output) { output_of(classes + source) }
+
+    context "with zero" do
+      let(:source) { "puts Zero.new.zero?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a positive value" do
+      let(:source) { "puts Plus.new.zero?" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
