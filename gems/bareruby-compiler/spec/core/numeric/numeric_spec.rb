@@ -119,4 +119,14 @@ RSpec.describe "Numeric" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#integer?" do
+    subject(:output) { output_of(classes + source) }
+
+    context "with a value of a subclass" do
+      let(:source) { "puts Plus.new.integer?" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
