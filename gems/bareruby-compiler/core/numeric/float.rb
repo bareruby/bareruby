@@ -16,4 +16,5 @@ class Float < Numeric
   Primitive.native_def :zero?, function: :zero_p_ovl_float, returns: Bool, parameters: { self: Float }
   Primitive.native_def :positive?, function: :positive_p_ovl_float, returns: Bool, parameters: { self: Float }
   Primitive.native_def :negative?, function: :negative_p_ovl_float, returns: Bool, parameters: { self: Float }
+  Primitive.native_def :abs, function: :abs_ovl_float, returns: Float, parameters: { self: Float }
 end
