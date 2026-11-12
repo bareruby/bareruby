@@ -33,4 +33,52 @@ RSpec.describe "Numeric" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  let(:classes) do
+    <<~RUBY
+      class Plus < Numeric
+        def <=>(other) = 1 <=> other
+        def ==(other) = 1 == other
+        def -@ = Plus.new
+      end
+
+      class Zero < Numeric
+        def <=>(other) = 0 <=> other
+        def ==(other) = 0 == other
+        def -@ = Zero.new
+      end
+
+      class Minus < Numeric
+        def <=>(other) = -1 <=> other
+        def ==(other) = -1 == other
+
+        def -@
+          puts 9
+          Minus.new
+        end
+      end
+    RUBY
+  end
+
+  describe "#positive?" do
+    subject(:output) { output_of(classes + source) }
+
+    context "with a positive value" do
+      let(:source) { "puts Plus.new.positive?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with zero" do
+      let(:source) { "puts Zero.new.positive?" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a negative value" do
+      let(:source) { "puts Minus.new.positive?" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
