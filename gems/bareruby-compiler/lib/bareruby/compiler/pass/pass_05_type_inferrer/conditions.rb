@@ -20,21 +20,26 @@ module BareRuby
             return logical(node, scope) if %i[and or].include?(@brast.node_type(node))
 
             condition = @inferrer.infer(node, scope)
-            [condition, *narrow(node, scope[:env])]
+            true_env, false_env = narrow(node, scope[:env])
+            [condition, @result.type_of(condition) == :nil ? nil : true_env, false_env]
           end
 
           def logical(node, scope)
             conjunction = @brast.node_type(node) == :and
             left_node, right_node = @brast.children_of(node)
             left, *left_envs = infer(left_node, scope)
-            scope[:env] = conjunction ? left_envs.first : left_envs.last
-            right, *right_envs = infer(right_node, scope)
+            right, *right_envs = infer_reached(right_node, conjunction ? left_envs.first : left_envs.last, scope)
             envs = joined_envs(scope, conjunction, left_envs, right_envs)
             scope[:env] = merge(scope, *envs)
             [conjunction ? @result.create_and(left, right) : @result.create_or(left, right), *envs]
           end
 
           private
+
+          def infer_reached(node, entry, scope)
+            condition, *envs = @inferrer.flow.branch(scope, entry) { infer(node, scope) }.first
+            [condition, *(entry ? envs : [nil, nil])]
+          end
 
           def joined_envs(scope, conjunction, (left_true, left_false), (right_true, right_false))
             return [right_true, merge(scope, left_false, right_false)] if conjunction

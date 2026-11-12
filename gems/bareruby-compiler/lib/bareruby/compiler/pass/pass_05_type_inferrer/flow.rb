@@ -17,6 +17,8 @@ module BareRuby
           end
 
           def merge(scope, first, second)
+            return (first || second || {}).dup unless first && second
+
             (first.keys | second.keys).to_h do |name|
               type = @result.merge_types(first.fetch(name, :nil), second.fetch(name, :nil))
               widen(scope, name, type)
@@ -25,8 +27,9 @@ module BareRuby
           end
 
           def branch(scope, env)
-            scope[:env] = env
-            [yield, scope[:env]]
+            scope[:env] = env || scope[:env].dup
+            value = yield
+            [value, env && scope[:env]]
           end
 
           private

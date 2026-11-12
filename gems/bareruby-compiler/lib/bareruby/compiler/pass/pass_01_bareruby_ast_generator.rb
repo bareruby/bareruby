@@ -49,6 +49,7 @@ module BareRuby
           case node
           when Prism::LocalVariableWriteNode then @result.create_local_write(node.name, read(node.value), span)
           when Prism::LocalVariableOperatorWriteNode then read_operator_write(node, span)
+          when Prism::LocalVariableOrWriteNode then read_or_write(node, span)
           when Prism::ArrayNode then @result.create_array(node.elements.map { read(it) }, span)
           when Prism::SelfNode then @result.create_self(span)
           else read_control(node, span)
@@ -89,6 +90,11 @@ module BareRuby
           call = @result.create_call(@result.create_local(node.name, span), node.binary_operator, [read(node.value)],
                                      span)
           @result.create_local_write(node.name, call, span)
+        end
+
+        def read_or_write(node, span)
+          write = @result.create_local_write(node.name, read(node.value), span)
+          @result.create_or(@result.create_local(node.name, span), write, span)
         end
 
         def read_method_definition(node, span)
