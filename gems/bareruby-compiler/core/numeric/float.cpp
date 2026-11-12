@@ -91,3 +91,7 @@ float BareRuby::Float::mul_ovl_float_int(float self, int32_t other) {
 float BareRuby::Float::div_ovl_float_int(float self, int32_t other) {
   return self / static_cast<float>(other);
 }
+
+float BareRuby::Float::modulo_ovl_float_int(float self, int32_t other) {
+  return std::fmod(self, static_cast<float>(other));
+}
