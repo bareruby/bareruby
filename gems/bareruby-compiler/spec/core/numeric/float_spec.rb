@@ -426,4 +426,36 @@ RSpec.describe "Float" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "::INFINITY" do
+    subject(:output) { output_of(source) }
+
+    context "with the largest finite binary32 value" do
+      let(:source) { "puts Float::INFINITY > 3.4028235e38" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a positive Float divided by zero" do
+      let(:source) do
+        <<~SOURCE
+          zero = 0.0
+          puts 1.0 / zero == Float::INFINITY
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a negative Float divided by zero" do
+      let(:source) do
+        <<~SOURCE
+          zero = 0.0
+          puts(-1.0 / zero == -Float::INFINITY)
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
