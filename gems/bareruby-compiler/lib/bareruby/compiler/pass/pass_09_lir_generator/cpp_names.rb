@@ -19,6 +19,7 @@ module BareRuby
             in Symbol then FIXED_TYPES.fetch(type)
             in [:instance, class_name] then "#{struct_name(class_name)}*"
             in [:array, element_type] then "#{array_type(element_type)}*"
+            in [:nilable, value_type] then "BareRuby::Nilable<#{cpp_type(value_type)}>"
             end
           end
 

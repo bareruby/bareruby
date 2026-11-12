@@ -49,6 +49,7 @@ module BareRuby
           case node
           when Prism::LocalVariableWriteNode then @result.create_local_write(node.name, read(node.value), span)
           when Prism::LocalVariableOperatorWriteNode then read_operator_write(node, span)
+          when Prism::LocalVariableOrWriteNode then read_or_write(node, span)
           when Prism::ArrayNode then @result.create_array(node.elements.map { read(it) }, span)
           when Prism::SelfNode then @result.create_self(span)
           else read_control(node, span)
@@ -61,6 +62,7 @@ module BareRuby
           when Prism::AndNode, Prism::OrNode then read_logical(node, span)
           when Prism::ParenthesesNode then read(node.body.body.last)
           when Prism::IfNode then read_if(node, span)
+          when Prism::UnlessNode then read_unless(node, span)
           else read_literal(node, span)
           end
         end
@@ -71,14 +73,28 @@ module BareRuby
         end
 
         def read_if(node, span)
-          branches = [node.statements, node.subsequent.statements].map { read(it.body.last) }
-          @result.create_if(read(node.predicate), *branches, span)
+          @result.create_if(read(node.predicate), read_branch(node.statements, span), read_else(node.subsequent, span),
+                            span)
         end
+
+        def read_unless(node, span)
+          @result.create_if(read(node.predicate), read_else(node.else_clause, span), read_branch(node.statements, span),
+                            span)
+        end
+
+        def read_else(node, span) = node.is_a?(Prism::IfNode) ? read(node) : read_branch(node&.statements, span)
+
+        def read_branch(statements, span) = statements ? read(statements.body.last) : @result.create_nil(span)
 
         def read_operator_write(node, span)
           call = @result.create_call(@result.create_local(node.name, span), node.binary_operator, [read(node.value)],
                                      span)
           @result.create_local_write(node.name, call, span)
+        end
+
+        def read_or_write(node, span)
+          write = @result.create_local_write(node.name, read(node.value), span)
+          @result.create_or(@result.create_local(node.name, span), write, span)
         end
 
         def read_method_definition(node, span)

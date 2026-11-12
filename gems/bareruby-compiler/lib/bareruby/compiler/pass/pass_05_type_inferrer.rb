@@ -11,7 +11,7 @@ module BareRuby
         TOP_LEVEL_SELF = %i[instance Object].freeze
         FORWARDING = :"..."
 
-        attr_reader :result
+        attr_reader :result, :flow, :conditions
 
         def initialize(bareruby_ast, pointer_size)
           @brast = bareruby_ast
@@ -21,10 +21,7 @@ module BareRuby
         def run
           @result = TypedAST.new
           @definitions = Definitions.new(@brast, @result).run
-          @expressions = Expressions.new(@brast, @result, @definitions, self, @pointer_size)
-          @native_rows = NativeRows.new(@brast, @definitions)
-          @specializer = Specializer.new(@result, self)
-          @bool_calls = BoolCalls.new(@result, self)
+          create_helpers
           add_native_methods
           infer_top_level
           @result.classes = @definitions.classes
@@ -35,20 +32,27 @@ module BareRuby
           value = @brast.children_of(node).first
           case @brast.node_type(node)
           when :call then infer_call(node, scope)
-          when :local then @result.create_local(value, scope[:locals].fetch(value))
+          when :local then @result.create_local(value, @flow.read(scope, value))
           when :constant then @result.create_class_reference(value)
           else infer_literal(node, value, scope)
           end
         end
 
-        def call_method(node, (owner, method), receiver, self_type, arguments)
-          types = types_of(arguments)
-          if method[:rows]
-            row = @native_rows.select(node, owner, method, self_type, types)
-            return @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
-          end
+        def call_on(node, receiver, scope)
+          _receiver_node, name, argument_nodes = @brast.children_of(node)
+          self_type = receiver ? @result.type_of(receiver) : scope[:self]
+          return @bool_calls.infer(node, receiver, [name, argument_nodes], scope) if self_type == :Bool
+          return @nilable_calls.infer(node, receiver, [name, argument_nodes], scope) if @result.nilable?(self_type)
 
-          function = @specializer.specialize(owner, @brast.children_of(node)[1], method, self_type, types)
+          owner, method = find_method(node, self_type, name)
+          arguments = infer_arguments(node, method, argument_nodes, scope)
+          call_method(node, [owner, method], receiver, self_type, arguments)
+        end
+
+        def call_method(node, (owner, method), receiver, self_type, arguments)
+          return call_native(node, [owner, method], [receiver, self_type], arguments) if method[:rows]
+
+          function = @specializer.specialize(owner, @brast.children_of(node)[1], method, self_type, types_of(arguments))
           @result.create_method_call(function, receiver, arguments)
         end
 
@@ -68,6 +72,25 @@ module BareRuby
 
         private
 
+        def call_native(node, (owner, method), (receiver, self_type), arguments)
+          types = types_of(arguments)
+          nilable = types.index { @result.nilable?(it) }
+          return @nilable_calls.split(node, [owner, method], [receiver, self_type], [arguments, nilable]) if nilable
+
+          row = @native_rows.select(node, owner, method, self_type, types)
+          @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
+        end
+
+        def create_helpers
+          @flow = Flow.new(@result)
+          @conditions = Conditions.new(@brast, @result, @definitions, self)
+          @expressions = Expressions.new(@brast, @result, @definitions, self, @pointer_size)
+          @native_rows = NativeRows.new(@brast, @definitions)
+          @specializer = Specializer.new(@result, self)
+          @bool_calls = BoolCalls.new(@result, self)
+          @nilable_calls = NilableCalls.new(@result, @definitions, self)
+        end
+
         def infer_literal(node, value, scope)
           case @brast.node_type(node)
           when :boolean then @result.create_boolean(value)
@@ -80,7 +103,7 @@ module BareRuby
         end
 
         def infer_top_level
-          scope = { self: TOP_LEVEL_SELF, locals: {}, forwarded: nil }
+          scope = { self: TOP_LEVEL_SELF, locals: {}, env: {}, forwarded: nil }
           @definitions.statements.each { @result.add_statement(infer(it, scope)) }
           @result.top_level_locals = scope[:locals]
         end
@@ -94,14 +117,8 @@ module BareRuby
         def infer_call(node, scope)
           return infer_primitive_call(node, scope) if primitive_call?(node)
 
-          receiver_node, name, argument_nodes = @brast.children_of(node)
-          receiver = receiver_node && infer(receiver_node, scope)
-          self_type = receiver ? @result.type_of(receiver) : scope[:self]
-          return @bool_calls.infer(node, receiver, [name, argument_nodes], scope) if self_type == :Bool
-
-          owner, method = find_method(node, self_type, name)
-          arguments = infer_arguments(node, method, argument_nodes, scope)
-          call_method(node, [owner, method], receiver, self_type, arguments)
+          receiver_node = @brast.children_of(node).first
+          call_on(node, receiver_node && infer(receiver_node, scope), scope)
         end
 
         def primitive_call?(node)
@@ -154,3 +171,6 @@ require_relative "pass_05_type_inferrer/expressions"
 require_relative "pass_05_type_inferrer/specializer"
 require_relative "pass_05_type_inferrer/native_rows"
 require_relative "pass_05_type_inferrer/bool_calls"
+require_relative "pass_05_type_inferrer/flow"
+require_relative "pass_05_type_inferrer/conditions"
+require_relative "pass_05_type_inferrer/nilable_calls"

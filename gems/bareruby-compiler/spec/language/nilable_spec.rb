@@ -1,0 +1,535 @@
+# frozen_string_literal: true
+
+require_relative "../support/core_program"
+
+RSpec.describe "Int?" do
+  include CoreProgram
+
+  describe "narrowed by its truth" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer assigned under a true condition" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x ? x + 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with an assignment skipped under a false condition" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(x ? x + 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with 0 assigned" do
+      let(:source) do
+        <<~RUBY
+          x = 0 if 1 < 2
+          puts(x ? 1 : 2)
+        RUBY
+      end
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with unless" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          unless x
+            puts 0
+          else
+            puts x + 1
+          end
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil assigned in the other branch" do
+      let(:source) do
+        <<~RUBY
+          x = 2 < 1 ? 5 : nil
+          puts(x ? x + 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+  end
+
+  describe "narrowed by nil?" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x.nil? ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(x.nil? ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with nil? redefined in Integer" do
+      let(:source) do
+        <<~RUBY
+          class Integer
+            def nil? = false
+          end
+          x = 5 if 1 < 2
+          puts(x.nil? ? 0 : x + 1)
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method '\+' for nil/) }
+    end
+  end
+
+  describe "narrowed by !" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(!x ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(!x ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with nil? negated" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(!x.nil? ? x + 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+  end
+
+  describe "narrowed by short-circuit evaluation" do
+    subject(:output) { output_of(source) }
+
+    context "with the right operand of && as a condition" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x && x > 3 ? 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with nil as the left operand of && as a condition" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(x && x > 3 ? 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with the right operand of ||" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x.nil? || x > 6)
+        RUBY
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with the false branch of || as a condition" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x.nil? || 1 > 2 ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+  end
+
+  describe "as the left operand of a logical operator" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer on the left of ||" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x || 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("5\n") }
+    end
+
+    context "with nil on the left of ||" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(x || 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with an Integer on the left of &&" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          y = x && x + 1
+          puts(y ? y : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil on the left of &&" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          y = x && x + 1
+          puts(y ? y : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+  end
+
+  describe "assigned by ||=" do
+    subject(:output) { output_of(source) }
+
+    context "with nil" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          x ||= 42
+          puts x + 1
+        RUBY
+      end
+
+      it { is_expected.to eq("43\n") }
+    end
+
+    context "with an Integer" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          x ||= 42
+          puts x + 1
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with 0" do
+      let(:source) do
+        <<~RUBY
+          x = 0 if 1 < 2
+          x ||= 42
+          puts x
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with a variable not assigned before" do
+      let(:source) do
+        <<~RUBY
+          x ||= 42
+          puts x
+        RUBY
+      end
+
+      it { is_expected.to eq("42\n") }
+    end
+  end
+
+  describe "assigned in a while loop" do
+    subject(:output) { output_of(source) }
+
+    context "with the loop run" do
+      let(:source) do
+        <<~RUBY
+          i = 0
+          while i < 3
+            x = i
+            i += 1
+          end
+          puts(x || -1)
+        RUBY
+      end
+
+      it { is_expected.to eq("2\n") }
+    end
+
+    context "with the loop not run" do
+      let(:source) do
+        <<~RUBY
+          i = 0
+          while i < 0
+            x = i
+            i += 1
+          end
+          puts(x || -1)
+        RUBY
+      end
+
+      it { is_expected.to eq("-1\n") }
+    end
+
+    context "with the value of the previous iteration read" do
+      let(:source) do
+        <<~RUBY
+          x = nil
+          i = 0
+          while i < 3
+            puts(x || -1)
+            x = i
+            i += 1
+          end
+        RUBY
+      end
+
+      it { is_expected.to eq("-1\n0\n1\n") }
+    end
+  end
+
+  describe "as an argument" do
+    subject(:output) { output_of(source) }
+
+    let(:definition) do
+      <<~RUBY
+        class Foo
+          def self.succ_or_zero(value) = value ? value + 1 : 0
+        end
+      RUBY
+    end
+
+    context "with an Integer" do
+      let(:source) { "#{definition}x = 5 if 1 < 2\nputs Foo.succ_or_zero(x)\n" }
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil" do
+      let(:source) { "#{definition}x = 5 if 2 < 1\nputs Foo.succ_or_zero(x)\n" }
+
+      it { is_expected.to eq("0\n") }
+    end
+  end
+
+  describe "as a return value" do
+    subject(:output) { output_of(source) }
+
+    let(:definition) do
+      <<~RUBY
+        class Foo
+          def self.five_if(flag) = (5 if flag)
+        end
+      RUBY
+    end
+
+    context "with an Integer returned" do
+      let(:source) { "#{definition}puts(Foo.five_if(1 < 2) || 0)\n" }
+
+      it { is_expected.to eq("5\n") }
+    end
+
+    context "with nil returned" do
+      let(:source) { "#{definition}puts(Foo.five_if(2 < 1) || 0)\n" }
+
+      it { is_expected.to eq("0\n") }
+    end
+  end
+
+  describe "as an argument of a native method" do
+    subject(:output) { output_of(source) }
+
+    context "with no native row for nil" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts x
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /no native_def of Kernel#puts accepts \(nil\)/) }
+    end
+  end
+
+  describe "read in its own first assignment" do
+    subject(:output) { output_of(source) }
+
+    context "with the variable alone on the right side" do
+      let(:source) do
+        <<~RUBY
+          x = x
+          puts x.nil?
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a default given by ||" do
+      let(:source) { "x = (x || 1) + 1\nputs x\n" }
+
+      it { is_expected.to eq("2\n") }
+    end
+  end
+
+  describe "assigned after being narrowed" do
+    subject(:output) { output_of(source) }
+
+    context "with nil assigned" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts((x = nil) || x + 1) if x
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method '\+' for NilClass/) }
+    end
+
+    context "with an Int? assigned" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          y = 7 if 2 < 1
+          puts((x = y) || x + 1) if x
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method '\+' for nil/) }
+    end
+  end
+
+  describe "as a receiver" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer calling a method that NilClass also has" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts x.nil?
+        RUBY
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with nil calling a method that Integer also has" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts x.nil?
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a method that NilClass does not have" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts x + 1
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method '\+' for nil/) }
+    end
+  end
+end
+
+RSpec.describe "Float?" do
+  include CoreProgram
+
+  describe "narrowed by its truth" do
+    subject(:output) { output_of(source) }
+
+    context "with a Float assigned under a true condition" do
+      let(:source) do
+        <<~RUBY
+          x = 1.5 if 1 < 2
+          puts(x ? x + 1.0 == 2.5 : false)
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an assignment skipped under a false condition" do
+      let(:source) do
+        <<~RUBY
+          x = 1.5 if 2 < 1
+          puts(x ? true : false)
+        RUBY
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with 0.0 assigned" do
+      let(:source) do
+        <<~RUBY
+          x = 0.0 if 1 < 2
+          puts(x ? true : false)
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
+end

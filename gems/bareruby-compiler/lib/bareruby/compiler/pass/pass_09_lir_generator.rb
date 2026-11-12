@@ -62,7 +62,8 @@ module BareRuby
         def add_function(function)
           @result.add_function(@names.function_name(function), @names.cpp_type(function[:return_type]),
                                hidden_parameters(function) + parameters(function),
-                               body(function[:locals], function[:body], function[:return_type]))
+                               body(function[:locals], function[:locals].merge(function[:parameters].to_h),
+                                    function[:body], function[:return_type]))
         end
 
         def hidden_parameters(function)
@@ -80,15 +81,15 @@ module BareRuby
         end
 
         def add_main
-          body = body(@tast.top_level_locals, @tast.statements, :nil)
+          body = body(@tast.top_level_locals, @tast.top_level_locals, @tast.statements, :nil)
           @result.add_function("main", "int", [], body + [@result.create_return(@result.create_literal("0"))])
         end
 
-        def body(locals, nodes, return_type)
-          definitions = locals.map do |name, type|
-            @result.create_variable_definition(@names.cpp_type(type), @names.variable_name(name))
+        def body(locals, storages, nodes, return_type)
+          definitions = locals.filter_map do |name, type|
+            @result.create_variable_definition(@names.cpp_type(type), @names.variable_name(name)) unless type == :nil
           end
-          definitions + FunctionBody.new(@tast, @result, @names).lower_statements(nodes, return_type)
+          definitions + FunctionBody.new(@tast, @result, @names, storages).lower_statements(nodes, return_type)
         end
       end
     end
@@ -99,3 +100,5 @@ require_relative "pass_09_lir_generator/cpp_names"
 require_relative "pass_09_lir_generator/function_body"
 require_relative "pass_09_lir_generator/array_lowering"
 require_relative "pass_09_lir_generator/call_lowering"
+require_relative "pass_09_lir_generator/nilable_lowering"
+require_relative "pass_09_lir_generator/logical_lowering"

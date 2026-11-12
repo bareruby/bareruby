@@ -52,12 +52,23 @@ module BareRuby
           private
 
           def infer_operator(node, scope)
-            operands = @brast.children_of(node).map { @inferrer.infer(it, scope) }
-            case @brast.node_type(node)
-            when :and then @result.create_and(*operands)
-            when :or then @result.create_or(*operands)
-            else @result.create_if(*operands)
-            end
+            return infer_if(*@brast.children_of(node), scope) if @brast.node_type(node) == :if
+
+            condition = @inferrer.conditions.logical(node, scope).first
+            left, right = @result.children_of(condition)
+            left_type = @result.type_of(left)
+            return condition unless left_type == :nil || @result.nilable?(left_type)
+
+            @result.create_logical(@brast.node_type(node), left, right)
+          end
+
+          def infer_if(condition_node, consequent_node, alternative_node, scope)
+            flow = @inferrer.flow
+            condition, true_env, false_env = @inferrer.conditions.infer(condition_node, scope)
+            consequent, consequent_env = flow.branch(scope, true_env) { @inferrer.infer(consequent_node, scope) }
+            alternative, alternative_env = flow.branch(scope, false_env) { @inferrer.infer(alternative_node, scope) }
+            scope[:env] = flow.merge(scope, consequent_env, alternative_env)
+            @result.create_if(condition, consequent, alternative)
           end
 
           def infer_constant_path(node, parent, name)
@@ -70,12 +81,27 @@ module BareRuby
 
           def infer_local_write(name, value_node, scope)
             value = @inferrer.infer(value_node, scope)
-            scope[:locals][name] ||= @result.type_of(value)
+            @inferrer.flow.assign(scope, name, @result.type_of(value))
             @result.create_local_write(name, value)
           end
 
-          def infer_while(condition, body, scope)
-            @result.create_while(@inferrer.infer(condition, scope), body.map { @inferrer.infer(it, scope) })
+          def infer_while(condition_node, body_nodes, scope)
+            entry = scope[:env]
+            head = entry
+            loop do
+              condition, body, false_env, next_head = infer_iteration([condition_node, body_nodes], head, entry, scope)
+              next head = next_head unless next_head == head
+
+              scope[:env] = false_env || {}
+              return @result.create_while(condition, body)
+            end
+          end
+
+          def infer_iteration((condition_node, body_nodes), head, entry, scope)
+            scope[:env] = head.dup
+            condition, true_env, false_env = @inferrer.conditions.infer(condition_node, scope)
+            body, body_end = @inferrer.flow.branch(scope, true_env) { body_nodes.map { @inferrer.infer(it, scope) } }
+            [condition, body, false_env, @inferrer.flow.merge(scope, entry, body_end)]
           end
 
           def infer_array(node, element_nodes, scope)

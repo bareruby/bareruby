@@ -3,7 +3,9 @@
 module BareRuby
   module Compiler
     module Pass
-      class CppSourceGenerator
+      # The compiler is provisional and will be discarded and rebuilt,
+      # so its classes are not split to meet the length limit.
+      class CppSourceGenerator # rubocop:disable Metrics/ClassLength
         attr_reader :files
 
         def initialize(lir)
@@ -34,7 +36,7 @@ module BareRuby
           "#pragma once\n#include <cstdint>\n#{in_namespaces(["BareRuby"], declarations)}"
         end
 
-        def main_source = includes + symbol_names + array_struct + structs + prototypes + definitions
+        def main_source = includes + symbol_names + array_struct + nilable_struct + structs + prototypes + definitions
 
         def includes
           headers = @lir.headers.map { "\"#{it[:name]}\"" } + ["\"symbol_table.hpp\""]
@@ -59,6 +61,10 @@ module BareRuby
                         "for (#{length} index = 0; index < length; index++) array->elements[index] = value;\n  " \
                         "return array;\n}\n"
           in_namespaces(["BareRuby"], "template <typename T>\nstruct Array {\n#{fields}};\n#{constructor}")
+        end
+
+        def nilable_struct
+          in_namespaces(["BareRuby"], "template <typename T>\nstruct Nilable {\n  bool present;\n  T value;\n};\n")
         end
 
         def structs
@@ -111,6 +117,7 @@ module BareRuby
           when :assignment then "#{expression(node[:target])} = #{expression(node[:value])}"
           when :dereference then "*#{expression(node[:value])}"
           when :list then "{#{arguments(node[:values])}}"
+          when :construction then "#{node[:type]}{#{arguments(node[:values])}}"
           else access_expression(node)
           end
         end
@@ -119,11 +126,15 @@ module BareRuby
           "(#{expression(node[:condition])} ? #{expression(node[:consequent])} : #{expression(node[:alternative])})"
         end
 
+        def member_expression(node)
+          "#{expression(node[:object])}#{node[:kind] == :member ? "->" : "."}#{node[:member]}"
+        end
+
         def access_expression(node)
           case node[:kind]
           when :conditional then conditional_expression(node)
           when :binary then "(#{expression(node[:left])} #{node[:operator]} #{expression(node[:right])})"
-          when :member then "#{expression(node[:object])}->#{node[:member]}"
+          when :member, :field then member_expression(node)
           when :element then "#{expression(node[:array])}[#{expression(node[:index])}]"
           end
         end

@@ -5,7 +5,7 @@ module BareRuby
     module Pass
       class LirGenerator
         class FunctionBody
-          def initialize(typed_ast, lir, names)
+          def initialize(typed_ast, lir, names, storages)
             @tast = typed_ast
             @result = lir
             @names = names
@@ -13,6 +13,8 @@ module BareRuby
             @temporaries = 0
             @arrays = ArrayLowering.new(typed_ast, lir, names, self)
             @calls = CallLowering.new(typed_ast, lir, names, self)
+            @nilables = NilableLowering.new(typed_ast, lir, names, self, storages)
+            @logicals = LogicalLowering.new(typed_ast, lir, names, self, @nilables)
           end
 
           def lower_statements(nodes, return_type)
@@ -28,6 +30,8 @@ module BareRuby
           def lower(node)
             return @arrays.lower(node) if ArrayLowering::NODE_TYPES.include?(@tast.node_type(node))
             return @calls.lower(node) if CallLowering::NODE_TYPES.include?(@tast.node_type(node))
+            return @nilables.lower(node) if NilableLowering::NODE_TYPES.include?(@tast.node_type(node))
+            return @logicals.lower(node) if LogicalLowering::NODE_TYPES.include?(@tast.node_type(node))
 
             lower_value(node)
           end
@@ -36,6 +40,12 @@ module BareRuby
             name = "temporary#{@temporaries += 1}"
             @prelude << @result.create_variable_definition(type, name, values)
             @result.create_address(name)
+          end
+
+          def named_temporary(type)
+            name = "temporary#{@temporaries += 1}"
+            @prelude << @result.create_variable_definition(type, name)
+            @result.create_literal(name)
           end
 
           def self_literal = @result.create_literal("self")
@@ -57,7 +67,7 @@ module BareRuby
           def lower_value(node)
             children = @tast.children_of(node)
             case @tast.node_type(node)
-            when :local then @result.create_literal(@names.variable_name(children.first))
+            when :local then @nilables.read(children.first, @tast.type_of(node))
             when :boolean, :integer then @result.create_literal(children.first.to_s)
             when :float then @result.create_literal("#{children.first}f")
             when :symbol then @result.create_literal(@result.symbol_id(children.first).to_s)
@@ -70,27 +80,28 @@ module BareRuby
             children = @tast.children_of(node)
             case @tast.node_type(node)
             when :self then self_literal
-            when :local_write then @result.create_assignment(variable(children.first), lower(children.last))
-            when :and then @result.create_binary("&&", *children.map { lower(it) })
-            when :or then @result.create_binary("||", *children.map { lower(it) })
-            when :if then conditional(*children)
+            when :local_write then @nilables.write(*children)
+            when :and then @result.create_binary("&&", *children.map { truth(it) })
+            when :or then @result.create_binary("||", *children.map { truth(it) })
+            when :if then conditional(node, children.first, children.drop(1))
             else @arrays.lower(node)
             end
           end
 
-          def conditional(condition, consequent, alternative)
-            @result.create_conditional(truth(condition), lower(consequent), lower(alternative))
+          def conditional(node, condition, branches)
+            type = @tast.type_of(node)
+            values = branches.map { type == :nil ? @nilables.discard(it) : @nilables.coerce(it, type) }
+            @result.create_conditional(truth(condition), *values)
           end
 
           def truth(condition)
             case @tast.type_of(condition)
-            when :Bool then lower(condition)
-            when :nil then @result.create_binary(",", lower(condition), @result.create_literal("false"))
+            in :Bool then lower(condition)
+            in [:nilable, _] then @nilables.truth(condition)
+            in :nil then @result.create_binary(",", lower(condition), @result.create_literal("false"))
             else @result.create_binary(",", lower(condition), @result.create_literal("true"))
             end
           end
-
-          def variable(name) = @result.create_literal(@names.variable_name(name))
 
           def lower_while(condition, body)
             condition = lower(condition)

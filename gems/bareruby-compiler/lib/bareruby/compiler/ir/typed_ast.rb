@@ -5,6 +5,7 @@ module BareRuby
     class TypedAST
       VALUE_TYPES = %i[Bool Int UInt8 UInt64 Float Symbol].freeze
       TYPE_ALIASES = { Byte: :UInt8 }.freeze
+      NILABLE_VALUES = %i[Int Float].freeze
 
       attr_accessor :top_level_locals, :classes
       attr_reader :statements, :native_methods, :functions
@@ -60,8 +61,12 @@ module BareRuby
 
       def create_or(left, right) = build(:or, [left, right], :Bool)
 
+      def create_logical(operator, left, right)
+        build(:logical, [operator, left, right], logical_type(operator, type_of(left), type_of(right)))
+      end
+
       def create_if(condition, consequent, alternative)
-        build(:if, [condition, consequent, alternative], type_of(consequent))
+        build(:if, [condition, consequent, alternative], merge_types(type_of(consequent), type_of(alternative)))
       end
 
       def create_array(elements, element_type) = build(:array, [elements], [:array, element_type])
@@ -73,6 +78,13 @@ module BareRuby
       def create_array_store(index, value) = build(:array_store, [index, value], type_of(value))
 
       def create_array_new(length, value) = build(:array_new, [length, value], [:array, type_of(value)])
+
+      def create_dispatch_value(type) = build(:dispatch_value, [], type)
+
+      def create_nilable_dispatch(receiver, value, value_call, nil_call)
+        build(:nilable_dispatch, [receiver, value, value_call, nil_call],
+              merge_types(type_of(value_call), type_of(nil_call)))
+      end
 
       def create_class_reference(name) = build(:class_reference, [name], [:class, name])
 
@@ -97,6 +109,15 @@ module BareRuby
         VALUE_TYPES.include?(name) ? name : [:instance, name]
       end
 
+      def merge_types(first, second)
+        return first if first == second
+
+        values = [first, second].map { nilable?(it) ? it.last : it }.reject { it == :nil }.uniq
+        values.size == 1 && NILABLE_VALUES.include?(values.first) ? [:nilable, values.first] : first
+      end
+
+      def nilable?(type) = (type in [:nilable, _])
+
       def class_of(type)
         case type
         in :Int | :UInt8 | :UInt64 then :Integer
@@ -109,6 +130,12 @@ module BareRuby
       end
 
       private
+
+      def logical_type(operator, left_type, right_type)
+        return operator == :and ? :nil : right_type if left_type == :nil
+
+        merge_types(operator == :and ? :nil : left_type.last, right_type)
+      end
 
       def build(type, children, result_type) = { type:, children:, result_type: }.freeze
     end
