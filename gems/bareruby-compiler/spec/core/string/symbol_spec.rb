@@ -5,6 +5,16 @@ require_relative "../../support/core_program"
 RSpec.describe "Symbol" do
   include CoreProgram
 
+  describe ".new" do
+    subject(:output) { output_of(source) }
+
+    context "without arguments" do
+      let(:source) { "Symbol.new" }
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method 'new' for Class/) }
+    end
+  end
+
   describe "#==" do
     subject(:output) { output_of(source) }
 
