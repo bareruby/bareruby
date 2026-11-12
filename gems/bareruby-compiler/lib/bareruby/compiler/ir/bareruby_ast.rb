@@ -58,6 +58,8 @@ module BareRuby
 
       def create_integer(value, span) = build(:integer, [value], span)
 
+      def create_float(text, span) = build(:float, [text], span)
+
       def create_nil(span) = build(:nil, [], span)
 
       def create_symbol(name, span) = build(:symbol, [name], span)

@@ -118,10 +118,17 @@ module BareRuby
           when Prism::ConstantReadNode, Prism::LocalVariableReadNode, Prism::ForwardingArgumentsNode
             read_reference(node, span)
           when Prism::TrueNode, Prism::FalseNode then @result.create_boolean(node.is_a?(Prism::TrueNode), span)
-          when Prism::IntegerNode then @result.create_integer(node.value, span)
           when Prism::NilNode then @result.create_nil(span)
           when Prism::SymbolNode then @result.create_symbol(node.unescaped.to_sym, span)
           when Prism::KeywordHashNode, Prism::HashNode then read_hash(node, span)
+          else read_number(node, span)
+          end
+        end
+
+        def read_number(node, span)
+          case node
+          when Prism::IntegerNode then @result.create_integer(node.value, span)
+          when Prism::FloatNode then @result.create_float(node.slice.delete("_"), span)
           else raise Error, "#{@path}:#{node.location.start_line}: unsupported syntax #{node.type}"
           end
         end

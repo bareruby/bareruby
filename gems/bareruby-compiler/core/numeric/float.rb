@@ -1,0 +1,5 @@
+# frozen_string_literal: true
+
+class Float < Numeric
+  Primitive.native_def :==, function: :eq_ovl_float, returns: Bool, parameters: { self: Float, other: Float }
+end
