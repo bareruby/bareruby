@@ -50,3 +50,27 @@ int32_t BareRuby::Integer::abs_ovl_int(int32_t self) {
 bool BareRuby::Integer::zero_p_ovl_int(int32_t self) {
   return self == 0;
 }
+
+bool BareRuby::Integer::le_ovl_int(int32_t self, int32_t other) {
+  return self <= other;
+}
+
+bool BareRuby::Integer::ge_ovl_int(int32_t self, int32_t other) {
+  return self >= other;
+}
+
+int32_t BareRuby::Integer::minus_ovl_int(int32_t self, int32_t other) {
+  return self - other;
+}
+
+int32_t BareRuby::Integer::div_ovl_int(int32_t self, int32_t other) {
+  return self / other;
+}
+
+int32_t BareRuby::Integer::modulo_ovl_int(int32_t self, int32_t other) {
+  return self % other;
+}
+
+int32_t BareRuby::Integer::uminus_ovl_int(int32_t self) {
+  return -self;
+}
