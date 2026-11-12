@@ -458,4 +458,32 @@ RSpec.describe "Float" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#finite?" do
+    subject(:output) { output_of(source) }
+
+    context "with a finite Float" do
+      let(:source) { "puts 1.5.finite?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with infinity" do
+      let(:source) { "puts Float::INFINITY.finite?" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with NaN" do
+      let(:source) do
+        <<~SOURCE
+          zero = 0.0
+          nan = zero / zero
+          puts nan.finite?
+        SOURCE
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
