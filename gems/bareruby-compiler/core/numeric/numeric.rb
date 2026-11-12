@@ -15,4 +15,7 @@ class Numeric
   def integer? = false
 
   def finite? = true
+
+  # rubocop:disable-next Naming/PredicateMethod, Style/ReturnNilInPredicateMethodDefinition -- infinite? returns nil for a finite value, as CRuby does
+  def infinite? = nil
 end
