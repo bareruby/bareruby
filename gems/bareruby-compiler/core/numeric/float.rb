@@ -12,4 +12,5 @@ class Float < Numeric
   Primitive.native_def :<=, function: :le_ovl_float, returns: Bool, parameters: { self: Float, other: Float }
   Primitive.native_def :>, function: :gt_ovl_float, returns: Bool, parameters: { self: Float, other: Float }
   Primitive.native_def :>=, function: :ge_ovl_float, returns: Bool, parameters: { self: Float, other: Float }
+  Primitive.native_def :equal?, function: :equal_p_ovl_float, returns: Bool, parameters: { self: Float, other: Float }
 end

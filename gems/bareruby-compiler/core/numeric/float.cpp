@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstring>
 
 #include "float.native.hpp"
 
@@ -44,4 +45,8 @@ bool BareRuby::Float::gt_ovl_float(float self, float other) {
 
 bool BareRuby::Float::ge_ovl_float(float self, float other) {
   return self >= other;
+}
+
+bool BareRuby::Float::equal_p_ovl_float(float self, float other) {
+  return std::memcmp(&self, &other, sizeof(float)) == 0;
 }
