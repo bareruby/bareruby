@@ -3,7 +3,7 @@
 module BareRuby
   module Compiler
     class TypedAST
-      VALUE_TYPES = %i[Bool Int UInt8 UInt64 Float].freeze
+      VALUE_TYPES = %i[Bool Int UInt8 UInt64 Float Symbol].freeze
       TYPE_ALIASES = { Byte: :UInt8 }.freeze
 
       attr_accessor :top_level_locals, :classes
@@ -82,6 +82,8 @@ module BareRuby
 
       def create_float(text) = build(:float, [text], :Float)
 
+      def create_symbol(name) = build(:symbol, [name], :Symbol)
+
       def create_nil = build(:nil, [], :nil)
 
       def node_type(node) = node[:type]
@@ -98,7 +100,7 @@ module BareRuby
       def class_of(type)
         case type
         in :Int | :UInt8 | :UInt64 then :Integer
-        in :Float then :Float
+        in :Float | :Symbol then type
         in :nil then :NilClass
         in [:class, _] then :Class
         in [:array, _] then :Array
