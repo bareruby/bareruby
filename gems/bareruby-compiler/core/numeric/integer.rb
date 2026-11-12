@@ -21,4 +21,6 @@ class Integer < Numeric
   Primitive.native_def :-@, function: :uminus_ovl_int, returns: Int, parameters: { self: Int }
 
   def integer? = true
+
+  def equal?(other) = self == other
 end
