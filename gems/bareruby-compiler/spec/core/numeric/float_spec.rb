@@ -371,6 +371,30 @@ RSpec.describe "Float" do
 
       it { is_expected.to eq("false\n") }
     end
+
+    context "with a larger Int" do
+      let(:source) { "puts 1.5 > 2" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with an equal Int" do
+      let(:source) { "puts 1.0 > 1" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a smaller Int" do
+      let(:source) { "puts 1.5 > 1" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an Int that rounds to the receiver as binary32" do
+      let(:source) { "puts 16777216.0 > 16777217" }
+
+      it { is_expected.to eq("false\n") }
+    end
   end
 
   describe "#>=" do
