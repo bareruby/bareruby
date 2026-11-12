@@ -26,4 +26,14 @@ RSpec.describe "||" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "with a nil left operand" do
+    subject(:output) { output_of(source) }
+
+    context "with a call on the left" do
+      let(:source) { "puts((puts 1) || 2)" }
+
+      it { is_expected.to eq("1\n2\n") }
+    end
+  end
 end
