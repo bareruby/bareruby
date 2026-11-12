@@ -50,3 +50,7 @@ bool BareRuby::Float::ge_ovl_float(float self, float other) {
 bool BareRuby::Float::equal_p_ovl_float(float self, float other) {
   return std::memcmp(&self, &other, sizeof(float)) == 0;
 }
+
+bool BareRuby::Float::zero_p_ovl_float(float self) {
+  return self == 0.0f;
+}
