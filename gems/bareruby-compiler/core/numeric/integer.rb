@@ -17,6 +17,7 @@ class Integer < Numeric
   Primitive.native_def :>=, function: :ge_ovl_int, returns: Bool, parameters: { self: Int, other: Int }
   Primitive.native_def :-, function: :minus_ovl_int, returns: Int, parameters: { self: Int, other: Int }
   Primitive.native_def :/, function: :div_ovl_int, returns: Int, parameters: { self: Int, other: Int }
+  Primitive.native_def :%, function: :modulo_ovl_int, returns: Int, parameters: { self: Int, other: Int }
 
   def integer? = true
 end
