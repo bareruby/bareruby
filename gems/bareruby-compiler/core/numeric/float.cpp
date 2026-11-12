@@ -135,3 +135,11 @@ int32_t BareRuby::Float::ceil_ovl_float(float self) {
 int32_t BareRuby::Float::round_ovl_float(float self) {
   return static_cast<int32_t>(std::round(self));
 }
+
+float BareRuby::Float::fdiv_ovl_float(float self, float other) {
+  return self / other;
+}
+
+float BareRuby::Float::fdiv_ovl_float_int(float self, int32_t other) {
+  return self / static_cast<float>(other);
+}

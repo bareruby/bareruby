@@ -35,4 +35,6 @@ class Float < Numeric
   Primitive.native_def :floor, function: :floor_ovl_float, returns: Int, parameters: { self: Float }
   Primitive.native_def :ceil, function: :ceil_ovl_float, returns: Int, parameters: { self: Float }
   Primitive.native_def :round, function: :round_ovl_float, returns: Int, parameters: { self: Float }
+  Primitive.native_def :fdiv, function: :fdiv_ovl_float, returns: Float, parameters: { self: Float, other: Float }
+  Primitive.native_def :fdiv, function: :fdiv_ovl_float_int, returns: Float, parameters: { self: Float, other: Int }
 end

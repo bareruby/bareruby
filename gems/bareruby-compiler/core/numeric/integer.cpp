@@ -119,3 +119,11 @@ bool BareRuby::Integer::ge_ovl_int_float(int32_t self, float other) {
 float BareRuby::Integer::to_f_ovl_int(int32_t self) {
   return static_cast<float>(self);
 }
+
+float BareRuby::Integer::fdiv_ovl_int(int32_t self, int32_t other) {
+  return static_cast<float>(self) / static_cast<float>(other);
+}
+
+float BareRuby::Integer::fdiv_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) / other;
+}
