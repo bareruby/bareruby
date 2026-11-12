@@ -85,8 +85,23 @@ module BareRuby
             @result.create_local_write(name, value)
           end
 
-          def infer_while(condition, body, scope)
-            @result.create_while(@inferrer.infer(condition, scope), body.map { @inferrer.infer(it, scope) })
+          def infer_while(condition_node, body_nodes, scope)
+            entry = scope[:env]
+            head = entry
+            loop do
+              condition, body, false_env, next_head = infer_iteration([condition_node, body_nodes], head, entry, scope)
+              next head = next_head unless next_head == head
+
+              scope[:env] = false_env || {}
+              return @result.create_while(condition, body)
+            end
+          end
+
+          def infer_iteration((condition_node, body_nodes), head, entry, scope)
+            scope[:env] = head.dup
+            condition, true_env, false_env = @inferrer.conditions.infer(condition_node, scope)
+            body, body_end = @inferrer.flow.branch(scope, true_env) { body_nodes.map { @inferrer.infer(it, scope) } }
+            [condition, body, false_env, @inferrer.flow.merge(scope, entry, body_end)]
           end
 
           def infer_array(node, element_nodes, scope)
