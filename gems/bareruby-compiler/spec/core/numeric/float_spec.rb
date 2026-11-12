@@ -722,4 +722,20 @@ RSpec.describe "Float" do
       it { is_expected.to eq("-3\n") }
     end
   end
+
+  describe "#fdiv" do
+    subject(:output) { output_of(source) }
+
+    context "with a Float" do
+      let(:source) { "puts 7.0.fdiv(2.0) == 3.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an Int" do
+      let(:source) { "puts 7.0.fdiv(2) == 3.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
