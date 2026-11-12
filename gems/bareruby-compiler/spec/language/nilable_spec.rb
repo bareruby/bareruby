@@ -67,6 +67,43 @@ RSpec.describe "Int?" do
       it { is_expected.to eq("0\n") }
     end
   end
+
+  describe "as a receiver" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer calling a method that NilClass also has" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts x.nil?
+        RUBY
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with nil calling a method that Integer also has" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts x.nil?
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a method that NilClass does not have" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts x + 1
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method '\+' for nil/) }
+    end
+  end
 end
 
 RSpec.describe "Float?" do
