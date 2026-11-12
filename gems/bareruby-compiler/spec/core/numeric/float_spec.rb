@@ -636,4 +636,20 @@ RSpec.describe "Float" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#to_i" do
+    subject(:output) { output_of(source) }
+
+    context "with a positive Float" do
+      let(:source) { "puts 1.9.to_i" }
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with a negative Float" do
+      let(:source) { "puts(-1.9.to_i)" }
+
+      it { is_expected.to eq("-1\n") }
+    end
+  end
 end
