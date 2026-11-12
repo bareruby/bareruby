@@ -12,6 +12,7 @@ module BareRuby
 
         def run
           @files = @lir.headers.to_h { [it[:name], header(it)] }
+          @files["symbol_table.hpp"] = symbol_table_header
           @files["main.cpp"] = main_source
           self
         end
@@ -27,10 +28,26 @@ module BareRuby
           "#pragma once\n#include <cstdint>\n#{forward}#{in_namespaces(header[:namespaces], class_definition)}"
         end
 
-        def main_source
-          includes = (["<cstdint>"] + @lir.headers.map { "\"#{it[:name]}\"" }).map { "#include #{it}\n" }.join
-          includes + array_struct + structs + prototypes + definitions
+        def symbol_table_header
+          fields = "  const char* bytes;\n  uint32_t length;\n"
+          declarations = "struct SymbolName {\n#{fields}};\nextern const SymbolName symbol_names[];\n"
+          "#pragma once\n#include <cstdint>\n#{in_namespaces(["BareRuby"], declarations)}"
         end
+
+        def main_source = includes + symbol_names + array_struct + structs + prototypes + definitions
+
+        def includes
+          headers = @lir.headers.map { "\"#{it[:name]}\"" } + ["\"symbol_table.hpp\""]
+          (["<cstdint>"] + headers).map { "#include #{it}\n" }.join
+        end
+
+        # A placeholder takes index 0 so that an ID indexes the table as it is, since no Symbol takes ID 0.
+        def symbol_names
+          entries = ([""] + @lir.symbol_ids.keys.map(&:to_s)).map { "{\"#{escape(it)}\", #{it.bytesize}}" }
+          "const BareRuby::SymbolName BareRuby::symbol_names[] = {#{entries.join(", ")}};\n"
+        end
+
+        def escape(name) = name.each_byte.map { it.chr.match?(/\w/) ? it.chr : format("\\%03o", it) }.join
 
         def definitions = @lir.functions.map { definition(it) }.join
 
