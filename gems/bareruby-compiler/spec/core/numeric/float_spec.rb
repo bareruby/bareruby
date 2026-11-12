@@ -168,4 +168,38 @@ RSpec.describe "Float" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#<" do
+    subject(:output) { output_of(source) }
+
+    context "with a larger Float" do
+      let(:source) { "puts 1.5 < 2.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an equal Float" do
+      let(:source) { "puts 1.5 < 1.5" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a smaller Float" do
+      let(:source) { "puts 2.5 < 1.5" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with NaN" do
+      let(:source) do
+        <<~SOURCE
+          zero = 0.0
+          nan = zero / zero
+          puts 1.5 < nan
+        SOURCE
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
