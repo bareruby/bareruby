@@ -13,4 +13,6 @@ class Numeric
   def zero? = !!(self == 0)
 
   def integer? = false
+
+  def finite? = true
 end
