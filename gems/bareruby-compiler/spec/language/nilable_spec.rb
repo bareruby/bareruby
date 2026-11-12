@@ -407,6 +407,27 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "read in its own first assignment" do
+    subject(:output) { output_of(source) }
+
+    context "with the variable alone on the right side" do
+      let(:source) do
+        <<~RUBY
+          x = x
+          puts x.nil?
+        RUBY
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a default given by ||" do
+      let(:source) { "x = (x || 1) + 1\nputs x\n" }
+
+      it { is_expected.to eq("2\n") }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
