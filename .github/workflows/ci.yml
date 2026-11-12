@@ -36,9 +36,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gem:
-          - bareruby
-          - bareruby-compiler
+        include:
+          - gem: bareruby
+            tasks: spec
+          - gem: bareruby-compiler
+            tasks: spec core_test
     name: rspec (${{ matrix.gem }})
     defaults:
       run:
@@ -49,4 +51,4 @@ jobs:
         with:
           ruby-version: "4.0"
       - run: bundle install
-      - run: bundle exec rspec
+      - run: bundle exec rake ${{ matrix.tasks }}
