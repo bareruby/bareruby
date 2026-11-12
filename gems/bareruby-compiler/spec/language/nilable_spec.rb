@@ -294,6 +294,56 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "assigned in a while loop" do
+    subject(:output) { output_of(source) }
+
+    context "with the loop run" do
+      let(:source) do
+        <<~RUBY
+          i = 0
+          while i < 3
+            x = i
+            i += 1
+          end
+          puts(x || -1)
+        RUBY
+      end
+
+      it { is_expected.to eq("2\n") }
+    end
+
+    context "with the loop not run" do
+      let(:source) do
+        <<~RUBY
+          i = 0
+          while i < 0
+            x = i
+            i += 1
+          end
+          puts(x || -1)
+        RUBY
+      end
+
+      it { is_expected.to eq("-1\n") }
+    end
+
+    context "with the value of the previous iteration read" do
+      let(:source) do
+        <<~RUBY
+          x = nil
+          i = 0
+          while i < 3
+            puts(x || -1)
+            x = i
+            i += 1
+          end
+        RUBY
+      end
+
+      it { is_expected.to eq("-1\n0\n1\n") }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
