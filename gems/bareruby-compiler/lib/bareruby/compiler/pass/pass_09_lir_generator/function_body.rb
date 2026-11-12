@@ -79,8 +79,8 @@ module BareRuby
             case @tast.node_type(node)
             when :self then self_literal
             when :local_write then @nilables.write(*children)
-            when :and then @result.create_binary("&&", *children.map { lower(it) })
-            when :or then @result.create_binary("||", *children.map { lower(it) })
+            when :and then @result.create_binary("&&", *children.map { truth(it) })
+            when :or then @result.create_binary("||", *children.map { truth(it) })
             when :if then conditional(node, children.first, children.drop(1))
             else @arrays.lower(node)
             end

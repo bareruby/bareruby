@@ -17,12 +17,32 @@ module BareRuby
 
           def infer(node, scope)
             return negate(node, scope) if negation?(node)
+            return logical(node, scope) if %i[and or].include?(@brast.node_type(node))
 
             condition = @inferrer.infer(node, scope)
             [condition, *narrow(node, scope[:env])]
           end
 
+          def logical(node, scope)
+            conjunction = @brast.node_type(node) == :and
+            left_node, right_node = @brast.children_of(node)
+            left, *left_envs = infer(left_node, scope)
+            scope[:env] = conjunction ? left_envs.first : left_envs.last
+            right, *right_envs = infer(right_node, scope)
+            envs = joined_envs(scope, conjunction, left_envs, right_envs)
+            scope[:env] = merge(scope, *envs)
+            [conjunction ? @result.create_and(left, right) : @result.create_or(left, right), *envs]
+          end
+
           private
+
+          def joined_envs(scope, conjunction, (left_true, left_false), (right_true, right_false))
+            return [right_true, merge(scope, left_false, right_false)] if conjunction
+
+            [merge(scope, left_true, right_true), right_false]
+          end
+
+          def merge(scope, first, second) = @inferrer.flow.merge(scope, first, second)
 
           def negation?(node)
             receiver, name, arguments = @brast.children_of(node)
