@@ -73,6 +73,7 @@ module BareRuby
           when :boolean then @result.create_boolean(value)
           when :integer then @result.create_integer(value)
           when :float then @result.create_float(value)
+          when :symbol then @result.create_symbol(value)
           when :nil then @result.create_nil
           else @expressions.infer(node, scope)
           end

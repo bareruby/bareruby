@@ -4,13 +4,14 @@ module BareRuby
   module Compiler
     class LIR
       attr_accessor :array_length_type
-      attr_reader :headers, :structs, :functions, :native_sources
+      attr_reader :headers, :structs, :functions, :native_sources, :symbol_ids
 
       def initialize
         @headers = []
         @structs = []
         @functions = []
         @native_sources = []
+        @symbol_ids = {}
       end
 
       def add_header(name, namespaces, class_name, declarations, structs)
@@ -32,6 +33,8 @@ module BareRuby
         @native_sources << path
         self
       end
+
+      def symbol_id(name) = @symbol_ids[name] ||= @symbol_ids.size + 1
 
       def create_declaration(name, parameters, return_type) = { name:, parameters:, return_type: }
 
