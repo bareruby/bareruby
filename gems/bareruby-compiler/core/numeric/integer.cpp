@@ -82,3 +82,7 @@ float BareRuby::Integer::plus_ovl_int_float(int32_t self, float other) {
 float BareRuby::Integer::minus_ovl_int_float(int32_t self, float other) {
   return static_cast<float>(self) - other;
 }
+
+float BareRuby::Integer::mul_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) * other;
+}

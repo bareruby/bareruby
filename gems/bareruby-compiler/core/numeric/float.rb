@@ -22,4 +22,5 @@ class Float < Numeric
   Primitive.native_def :finite?, function: :finite_p_ovl_float, returns: Bool, parameters: { self: Float }
   Primitive.native_def :+, function: :plus_ovl_float_int, returns: Float, parameters: { self: Float, other: Int }
   Primitive.native_def :-, function: :minus_ovl_float_int, returns: Float, parameters: { self: Float, other: Int }
+  Primitive.native_def :*, function: :mul_ovl_float_int, returns: Float, parameters: { self: Float, other: Int }
 end
