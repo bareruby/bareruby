@@ -344,6 +344,54 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "as an argument" do
+    subject(:output) { output_of(source) }
+
+    let(:definition) do
+      <<~RUBY
+        class Foo
+          def self.succ_or_zero(value) = value ? value + 1 : 0
+        end
+      RUBY
+    end
+
+    context "with an Integer" do
+      let(:source) { "#{definition}x = 5 if 1 < 2\nputs Foo.succ_or_zero(x)\n" }
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil" do
+      let(:source) { "#{definition}x = 5 if 2 < 1\nputs Foo.succ_or_zero(x)\n" }
+
+      it { is_expected.to eq("0\n") }
+    end
+  end
+
+  describe "as a return value" do
+    subject(:output) { output_of(source) }
+
+    let(:definition) do
+      <<~RUBY
+        class Foo
+          def self.five_if(flag) = (5 if flag)
+        end
+      RUBY
+    end
+
+    context "with an Integer returned" do
+      let(:source) { "#{definition}puts(Foo.five_if(1 < 2) || 0)\n" }
+
+      it { is_expected.to eq("5\n") }
+    end
+
+    context "with nil returned" do
+      let(:source) { "#{definition}puts(Foo.five_if(2 < 1) || 0)\n" }
+
+      it { is_expected.to eq("0\n") }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
