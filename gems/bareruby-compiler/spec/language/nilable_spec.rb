@@ -428,6 +428,33 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "assigned after being narrowed" do
+    subject(:output) { output_of(source) }
+
+    context "with nil assigned" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts((x = nil) || x + 1) if x
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method '\+' for NilClass/) }
+    end
+
+    context "with an Int? assigned" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          y = 7 if 2 < 1
+          puts((x = y) || x + 1) if x
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method '\+' for nil/) }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
