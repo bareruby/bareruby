@@ -238,4 +238,32 @@ RSpec.describe "Integer" do
       it { is_expected.to eq("-56\n") }
     end
   end
+
+  describe "#/" do
+    subject(:output) { output_of(source) }
+
+    context "with an exact quotient" do
+      let(:source) { "puts 8 / 2" }
+
+      it { is_expected.to eq("4\n") }
+    end
+
+    context "with a positive quotient with a remainder" do
+      let(:source) { "puts 7 / 2" }
+
+      it { is_expected.to eq("3\n") }
+    end
+
+    context "with a negative dividend" do
+      let(:source) { "puts(-7 / 2)" }
+
+      it { is_expected.to eq("-3\n") }
+    end
+
+    context "with a negative divisor" do
+      let(:source) { "puts 7 / -2" }
+
+      it { is_expected.to eq("-3\n") }
+    end
+  end
 end
