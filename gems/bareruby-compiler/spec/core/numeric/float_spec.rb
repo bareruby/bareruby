@@ -684,4 +684,20 @@ RSpec.describe "Float" do
       it { is_expected.to eq("-2\n") }
     end
   end
+
+  describe "#ceil" do
+    subject(:output) { output_of(source) }
+
+    context "with a positive Float" do
+      let(:source) { "puts 1.1.ceil" }
+
+      it { is_expected.to eq("2\n") }
+    end
+
+    context "with a negative Float" do
+      let(:source) { "puts(-1.9.ceil)" }
+
+      it { is_expected.to eq("-1\n") }
+    end
+  end
 end
