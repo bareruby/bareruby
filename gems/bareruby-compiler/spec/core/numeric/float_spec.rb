@@ -81,6 +81,12 @@ RSpec.describe "Float" do
 
       it { is_expected.to eq("true\n") }
     end
+
+    context "with an Int" do
+      let(:source) { "puts 2.5 - 1 == 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
   end
 
   describe "#*" do
