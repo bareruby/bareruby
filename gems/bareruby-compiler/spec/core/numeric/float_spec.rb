@@ -120,4 +120,30 @@ RSpec.describe "Float" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#-@" do
+    subject(:output) { output_of(source) }
+
+    context "with a positive Float" do
+      let(:source) do
+        <<~SOURCE
+          value = 1.5
+          puts(-value == -1.5)
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a negative Float" do
+      let(:source) do
+        <<~SOURCE
+          value = -1.5
+          puts(-value == 1.5)
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
