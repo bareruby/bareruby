@@ -29,3 +29,7 @@ float BareRuby::Float::uminus_ovl_float(float self) {
 float BareRuby::Float::modulo_ovl_float(float self, float other) {
   return std::fmod(self, other);
 }
+
+bool BareRuby::Float::lt_ovl_float(float self, float other) {
+  return self < other;
+}
