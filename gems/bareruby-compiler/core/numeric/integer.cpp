@@ -46,3 +46,7 @@ int32_t BareRuby::Integer::cmp_ovl_int(int32_t self, int32_t other) {
 int32_t BareRuby::Integer::abs_ovl_int(int32_t self) {
   return std::abs(self);
 }
+
+bool BareRuby::Integer::zero_p_ovl_int(int32_t self) {
+  return self == 0;
+}
