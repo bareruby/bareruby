@@ -110,4 +110,26 @@ RSpec.describe "Comparable" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#between?" do
+    subject(:output) { output_of(classes + source) }
+
+    context "with the receiver between the two objects" do
+      let(:source) { "puts Low.new.between?(Low.new, High.new)" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with the receiver above the maximum" do
+      let(:source) { "puts High.new.between?(Low.new, Low.new)" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with the receiver below the minimum" do
+      let(:source) { "puts Low.new.between?(High.new, High.new)" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
