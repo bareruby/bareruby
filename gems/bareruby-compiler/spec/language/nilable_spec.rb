@@ -68,6 +68,46 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "narrowed by nil?" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x.nil? ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(x.nil? ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with nil? redefined in Integer" do
+      let(:source) do
+        <<~RUBY
+          class Integer
+            def nil? = false
+          end
+          x = 5 if 1 < 2
+          puts(x.nil? ? 0 : x + 1)
+        RUBY
+      end
+
+      it { expect { output }.to raise_error(BareRuby::Compiler::Error, /undefined method '\+' for nil/) }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
