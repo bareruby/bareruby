@@ -36,6 +36,8 @@ module BareRuby
 
       def create_constant(name, span) = build(:constant, [name], span)
 
+      def create_constant_path(parent, name, span) = build(:constant_path, [parent, name], span)
+
       def create_local(name, span) = build(:local, [name], span)
 
       def create_local_write(name, value, span) = build(:local_write, [name, value], span)

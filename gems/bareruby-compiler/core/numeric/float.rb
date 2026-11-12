@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Float < Numeric
+  Primitive.native_const :INFINITY, function: :infinity, returns: Float
+
   Primitive.native_def :==, function: :eq_ovl_float, returns: Bool, parameters: { self: Float, other: Float }
   Primitive.native_def :+, function: :plus_ovl_float, returns: Float, parameters: { self: Float, other: Float }
   Primitive.native_def :-, function: :minus_ovl_float, returns: Float, parameters: { self: Float, other: Float }

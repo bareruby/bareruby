@@ -1,7 +1,12 @@
 #include <cmath>
 #include <cstring>
+#include <limits>
 
 #include "float.native.hpp"
+
+float BareRuby::Float::infinity() {
+  return std::numeric_limits<float>::infinity();
+}
 
 bool BareRuby::Float::eq_ovl_float(float self, float other) {
   return self == other;

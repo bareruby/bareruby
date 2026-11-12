@@ -115,7 +115,8 @@ module BareRuby
 
         def read_literal(node, span)
           case node
-          when Prism::ConstantReadNode, Prism::LocalVariableReadNode, Prism::ForwardingArgumentsNode
+          when Prism::ConstantReadNode, Prism::ConstantPathNode, Prism::LocalVariableReadNode,
+               Prism::ForwardingArgumentsNode
             read_reference(node, span)
           when Prism::TrueNode, Prism::FalseNode then @result.create_boolean(node.is_a?(Prism::TrueNode), span)
           when Prism::NilNode then @result.create_nil(span)
@@ -136,6 +137,7 @@ module BareRuby
         def read_reference(node, span)
           case node
           when Prism::ConstantReadNode then @result.create_constant(node.name, span)
+          when Prism::ConstantPathNode then @result.create_constant_path(read(node.parent), node.name, span)
           when Prism::LocalVariableReadNode then @result.create_local(node.name, span)
           else @result.create_forwarding(span)
           end
