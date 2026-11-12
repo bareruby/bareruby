@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 
 #include "integer.native.hpp"
 
@@ -40,4 +41,8 @@ bool BareRuby::Integer::gt_ovl_int(int32_t self, int32_t other) {
 
 int32_t BareRuby::Integer::cmp_ovl_int(int32_t self, int32_t other) {
   return (self > other) - (self < other);
+}
+
+int32_t BareRuby::Integer::abs_ovl_int(int32_t self) {
+  return std::abs(self);
 }
