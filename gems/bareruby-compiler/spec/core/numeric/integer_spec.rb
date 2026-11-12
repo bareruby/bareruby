@@ -38,4 +38,14 @@ RSpec.describe "Integer" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#integer?" do
+    subject(:output) { output_of(source) }
+
+    context "with an Int" do
+      let(:source) { "puts 7.integer?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
