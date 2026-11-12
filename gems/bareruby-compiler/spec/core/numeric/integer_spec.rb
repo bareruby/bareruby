@@ -206,4 +206,20 @@ RSpec.describe "Integer" do
       it { is_expected.to eq("-1\n") }
     end
   end
+
+  describe "#-" do
+    subject(:output) { output_of(source) }
+
+    context "with a smaller Int" do
+      let(:source) { "puts 8 - 7" }
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with a larger Int" do
+      let(:source) { "puts 7 - 8" }
+
+      it { is_expected.to eq("-1\n") }
+    end
+  end
 end
