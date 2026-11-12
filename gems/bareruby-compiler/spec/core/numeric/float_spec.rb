@@ -700,4 +700,26 @@ RSpec.describe "Float" do
       it { is_expected.to eq("-1\n") }
     end
   end
+
+  describe "#round" do
+    subject(:output) { output_of(source) }
+
+    context "with a fraction below one half" do
+      let(:source) { "puts 1.4.round" }
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with one half" do
+      let(:source) { "puts 2.5.round" }
+
+      it { is_expected.to eq("3\n") }
+    end
+
+    context "with a negative one half" do
+      let(:source) { "puts(-2.5.round)" }
+
+      it { is_expected.to eq("-3\n") }
+    end
+  end
 end
