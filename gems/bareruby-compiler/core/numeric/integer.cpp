@@ -103,3 +103,7 @@ bool BareRuby::Integer::eq_ovl_int_float(int32_t self, float other) {
 bool BareRuby::Integer::lt_ovl_int_float(int32_t self, float other) {
   return static_cast<float>(self) < other;
 }
+
+bool BareRuby::Integer::le_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) <= other;
+}
