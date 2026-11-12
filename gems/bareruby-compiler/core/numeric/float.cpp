@@ -71,3 +71,7 @@ bool BareRuby::Float::negative_p_ovl_float(float self) {
 float BareRuby::Float::abs_ovl_float(float self) {
   return std::fabs(self);
 }
+
+bool BareRuby::Float::finite_p_ovl_float(float self) {
+  return std::isfinite(self);
+}
