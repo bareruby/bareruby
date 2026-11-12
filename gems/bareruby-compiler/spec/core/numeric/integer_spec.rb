@@ -205,6 +205,12 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("-1\n") }
     end
+
+    context "with a Float" do
+      let(:source) { "puts 1 + 0.5 == 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
   end
 
   describe "#-" do
