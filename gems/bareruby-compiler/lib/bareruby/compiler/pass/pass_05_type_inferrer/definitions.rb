@@ -77,8 +77,10 @@ module BareRuby
             end
           end
 
-          def collect_class(path, name, body)
-            @owners[name].merge!(class: true, superclass: superclass_of(name))
+          def collect_class(path, name, body, superclass_node)
+            explicit = superclass_node && @brast.children_of(superclass_node).first
+            superclass = explicit || @owners[name][:superclass] || superclass_of(name)
+            @owners[name].merge!(class: true, superclass:)
             collect_owner(path, name, body)
           end
 
