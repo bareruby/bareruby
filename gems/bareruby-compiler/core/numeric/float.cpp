@@ -58,3 +58,7 @@ bool BareRuby::Float::zero_p_ovl_float(float self) {
 bool BareRuby::Float::positive_p_ovl_float(float self) {
   return self > 0.0f;
 }
+
+bool BareRuby::Float::negative_p_ovl_float(float self) {
+  return self < 0.0f;
+}
