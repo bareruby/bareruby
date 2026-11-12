@@ -88,4 +88,20 @@ RSpec.describe "Symbol" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#equal?" do
+    subject(:output) { output_of(source) }
+
+    context "with a Symbol of the same name" do
+      let(:source) { "puts :ready.equal?(:ready)" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a Symbol of a different name" do
+      let(:source) { "puts :ready.equal?(:done)" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
