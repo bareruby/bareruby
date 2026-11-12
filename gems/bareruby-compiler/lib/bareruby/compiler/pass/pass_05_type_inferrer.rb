@@ -101,8 +101,14 @@ module BareRuby
         def infer_call(node, scope)
           return infer_primitive_call(node, scope) if primitive_call?(node)
 
-          receiver_node, name, argument_nodes = @brast.children_of(node)
-          receiver = receiver_node && infer(receiver_node, scope)
+          receiver_node = @brast.children_of(node).first
+          call_on(node, receiver_node && infer(receiver_node, scope), scope)
+        end
+
+        public
+
+        def call_on(node, receiver, scope)
+          _receiver_node, name, argument_nodes = @brast.children_of(node)
           self_type = receiver ? @result.type_of(receiver) : scope[:self]
           return @bool_calls.infer(node, receiver, [name, argument_nodes], scope) if self_type == :Bool
           return @nilable_calls.infer(node, receiver, [name, argument_nodes], scope) if @result.nilable?(self_type)
@@ -111,6 +117,8 @@ module BareRuby
           arguments = infer_arguments(node, method, argument_nodes, scope)
           call_method(node, [owner, method], receiver, self_type, arguments)
         end
+
+        private
 
         def primitive_call?(node)
           @definitions.primitive_call?(node, :new_instance) || @expressions.array_primitive?(node)

@@ -6,6 +6,7 @@ module BareRuby
       class TypeInferrer
         class Conditions
           BUILTIN_NIL_CHECKS = %i[Kernel NilClass].freeze
+          BOOL_CLASSES = %i[TrueClass FalseClass].freeze
 
           def initialize(bareruby_ast, typed_ast, definitions, inferrer)
             @brast = bareruby_ast
@@ -15,11 +16,32 @@ module BareRuby
           end
 
           def infer(node, scope)
+            return negate(node, scope) if negation?(node)
+
             condition = @inferrer.infer(node, scope)
             [condition, *narrow(node, scope[:env])]
           end
 
           private
+
+          def negation?(node)
+            receiver, name, arguments = @brast.children_of(node)
+            @brast.node_type(node) == :call && name == :! && arguments.empty? && receiver
+          end
+
+          def negate(node, scope)
+            operand, true_env, false_env = infer(@brast.children_of(node).first, scope)
+            condition = @inferrer.call_on(node, operand, scope)
+            builtin = classes_of(@result.type_of(operand)).all? { @definitions.lookup(it, :!)&.first == :BasicObject }
+            builtin ? [condition, false_env, true_env] : [condition, scope[:env].dup, scope[:env].dup]
+          end
+
+          def classes_of(type)
+            return BOOL_CLASSES if type == :Bool
+            return [@result.class_of(type.last), :NilClass] if @result.nilable?(type)
+
+            [@result.class_of(type)]
+          end
 
           def narrow(node, env)
             name, truthy = target(node, env)
