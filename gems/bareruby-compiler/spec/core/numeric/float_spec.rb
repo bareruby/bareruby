@@ -146,4 +146,26 @@ RSpec.describe "Float" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#%" do
+    subject(:output) { output_of(source) }
+
+    context "with two positive Floats" do
+      let(:source) { "puts 7.5 % 2.0 == 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a negative dividend" do
+      let(:source) { "puts((-7.5 % 2.0) == -1.5)" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a negative divisor" do
+      let(:source) { "puts 7.5 % -2.0 == 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
