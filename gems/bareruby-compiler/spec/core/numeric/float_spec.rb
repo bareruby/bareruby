@@ -92,4 +92,32 @@ RSpec.describe "Float" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#/" do
+    subject(:output) { output_of(source) }
+
+    context "with two Floats" do
+      let(:source) { "puts 7.5 / 2.5 == 3.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a quotient that rounds to binary32" do
+      let(:source) { "puts 1.0 / 3.0 == 0.333333343" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with zero divided by zero" do
+      let(:source) do
+        <<~SOURCE
+          zero = 0.0
+          nan = zero / zero
+          puts nan == nan
+        SOURCE
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
