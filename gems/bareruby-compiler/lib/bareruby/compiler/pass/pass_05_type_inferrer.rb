@@ -67,7 +67,7 @@ module BareRuby
 
         def create_helpers
           @flow = Flow.new(@result)
-          @conditions = Conditions.new(@brast, @result, self, @flow)
+          @conditions = Conditions.new(@brast, @result, @definitions, self)
           @expressions = Expressions.new(@brast, @result, @definitions, self, @pointer_size)
           @native_rows = NativeRows.new(@brast, @definitions)
           @specializer = Specializer.new(@result, self)
