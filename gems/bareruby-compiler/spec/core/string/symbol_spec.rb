@@ -156,4 +156,84 @@ RSpec.describe "Symbol" do
       it { is_expected.to eq("1\n") }
     end
   end
+
+  describe "#<" do
+    subject(:output) { output_of(source) }
+
+    context "with a Symbol whose name comes later" do
+      let(:source) { "puts :apple < :banana" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a Symbol of the same name" do
+      let(:source) { "puts :apple < :apple" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
+
+  describe "#<=" do
+    subject(:output) { output_of(source) }
+
+    context "with a Symbol of the same name" do
+      let(:source) { "puts :apple <= :apple" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a Symbol whose name comes earlier" do
+      let(:source) { "puts :banana <= :apple" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
+
+  describe "#>" do
+    subject(:output) { output_of(source) }
+
+    context "with a Symbol whose name comes earlier" do
+      let(:source) { "puts :banana > :apple" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a Symbol of the same name" do
+      let(:source) { "puts :apple > :apple" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
+
+  describe "#>=" do
+    subject(:output) { output_of(source) }
+
+    context "with a Symbol of the same name" do
+      let(:source) { "puts :apple >= :apple" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a Symbol whose name comes later" do
+      let(:source) { "puts :apple >= :banana" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
+
+  describe "#between?" do
+    subject(:output) { output_of(source) }
+
+    context "with bounds whose names enclose the receiver's name" do
+      let(:source) { "puts :banana.between?(:apple, :cherry)" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with bounds whose names come after the receiver's name" do
+      let(:source) { "puts :apple.between?(:banana, :cherry)" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
