@@ -58,6 +58,8 @@ module BareRuby
 
       def create_and(left, right) = build(:and, [left, right], :Bool)
 
+      def create_or(left, right) = build(:or, [left, right], :Bool)
+
       def create_if(condition, consequent, alternative)
         build(:if, [condition, consequent, alternative], type_of(consequent))
       end
