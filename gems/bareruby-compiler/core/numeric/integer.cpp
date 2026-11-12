@@ -62,3 +62,7 @@ bool BareRuby::Integer::ge_ovl_int(int32_t self, int32_t other) {
 int32_t BareRuby::Integer::minus_ovl_int(int32_t self, int32_t other) {
   return self - other;
 }
+
+int32_t BareRuby::Integer::div_ovl_int(int32_t self, int32_t other) {
+  return self / other;
+}
