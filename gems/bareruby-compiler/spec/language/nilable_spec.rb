@@ -193,6 +193,56 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "as the left operand of a logical operator" do
+    subject(:output) { output_of(source) }
+
+    context "with an Integer on the left of ||" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x || 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("5\n") }
+    end
+
+    context "with nil on the left of ||" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(x || 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with an Integer on the left of &&" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          y = x && x + 1
+          puts(y ? y : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+
+    context "with nil on the left of &&" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          y = x && x + 1
+          puts(y ? y : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
