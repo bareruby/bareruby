@@ -12,4 +12,7 @@ module Comparable
 
   # rubocop:disable-next Style/NumericPredicate, Style/InverseMethods -- a result that is neither positive nor negative counts as 0, as in CRuby's rb_cmpint
   def >=(other) = !((self <=> other) < 0)
+
+  # rubocop:disable-next Style/NumericPredicate, Style/InverseMethods -- a result that is neither positive nor negative counts as 0, as in CRuby's rb_cmpint
+  def between?(min, max) = !((self <=> min) < 0) && !((self <=> max) > 0)
 end
