@@ -28,6 +28,7 @@ class Integer < Numeric
   Primitive.native_def :<, function: :lt_ovl_int_float, returns: Bool, parameters: { self: Int, other: Float }
   Primitive.native_def :<=, function: :le_ovl_int_float, returns: Bool, parameters: { self: Int, other: Float }
   Primitive.native_def :>, function: :gt_ovl_int_float, returns: Bool, parameters: { self: Int, other: Float }
+  Primitive.native_def :>=, function: :ge_ovl_int_float, returns: Bool, parameters: { self: Int, other: Float }
 
   def integer? = true
 

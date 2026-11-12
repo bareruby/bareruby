@@ -111,3 +111,7 @@ bool BareRuby::Float::le_ovl_float_int(float self, int32_t other) {
 bool BareRuby::Float::gt_ovl_float_int(float self, int32_t other) {
   return self > static_cast<float>(other);
 }
+
+bool BareRuby::Float::ge_ovl_float_int(float self, int32_t other) {
+  return self >= static_cast<float>(other);
+}
