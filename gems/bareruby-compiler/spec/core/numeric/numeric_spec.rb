@@ -139,4 +139,14 @@ RSpec.describe "Numeric" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#infinite?" do
+    subject(:output) { output_of(classes + source) }
+
+    context "with a value of a subclass" do
+      let(:source) { "puts Plus.new.infinite?.nil?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
