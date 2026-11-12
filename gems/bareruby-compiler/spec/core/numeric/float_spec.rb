@@ -76,4 +76,20 @@ RSpec.describe "Float" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#*" do
+    subject(:output) { output_of(source) }
+
+    context "with two Floats" do
+      let(:source) { "puts 1.5 * 2.5 == 3.75" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a negative Float" do
+      let(:source) { "puts 1.5 * -2.0 == -3.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
