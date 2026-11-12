@@ -61,6 +61,10 @@ module BareRuby
 
       def create_or(left, right) = build(:or, [left, right], :Bool)
 
+      def create_logical(operator, left, right)
+        build(:logical, [operator, left, right], logical_type(operator, type_of(left), type_of(right)))
+      end
+
       def create_if(condition, consequent, alternative)
         build(:if, [condition, consequent, alternative], merge_types(type_of(consequent), type_of(alternative)))
       end
@@ -126,6 +130,12 @@ module BareRuby
       end
 
       private
+
+      def logical_type(operator, left_type, right_type)
+        return operator == :and ? :nil : right_type if left_type == :nil
+
+        merge_types(operator == :and ? :nil : left_type.last, right_type)
+      end
 
       def build(type, children, result_type) = { type:, children:, result_type: }.freeze
     end

@@ -14,6 +14,7 @@ module BareRuby
             @arrays = ArrayLowering.new(typed_ast, lir, names, self)
             @calls = CallLowering.new(typed_ast, lir, names, self)
             @nilables = NilableLowering.new(typed_ast, lir, names, self, storages)
+            @logicals = LogicalLowering.new(typed_ast, lir, names, self, @nilables)
           end
 
           def lower_statements(nodes, return_type)
@@ -30,6 +31,7 @@ module BareRuby
             return @arrays.lower(node) if ArrayLowering::NODE_TYPES.include?(@tast.node_type(node))
             return @calls.lower(node) if CallLowering::NODE_TYPES.include?(@tast.node_type(node))
             return @nilables.lower(node) if NilableLowering::NODE_TYPES.include?(@tast.node_type(node))
+            return @logicals.lower(node) if LogicalLowering::NODE_TYPES.include?(@tast.node_type(node))
 
             lower_value(node)
           end

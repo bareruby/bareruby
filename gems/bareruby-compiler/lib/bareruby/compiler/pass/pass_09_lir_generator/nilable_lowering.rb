@@ -41,13 +41,18 @@ module BareRuby
           end
 
           def coerce(node, target)
-            type = @tast.type_of(node)
-            return @body.lower(node) unless (target in [:nilable, value_type]) && type != target
-            return construct(target, "true", @body.lower(node)) if type == value_type
-            return @body.lower(node) unless type == :nil
+            convert(@tast.type_of(node), target, CallLowering::NIL_VALUES.include?(@tast.node_type(node))) do
+              @body.lower(node)
+            end
+          end
+
+          def convert(type, target, pure)
+            return yield unless (target in [:nilable, value_type]) && type != target
+            return construct(target, "true", yield) if type == value_type
+            return yield unless type == :nil
 
             empty = construct(target, "false", @result.create_literal("0"))
-            CallLowering::NIL_VALUES.include?(@tast.node_type(node)) ? empty : comma(@body.lower(node), empty)
+            pure ? empty : comma(yield, empty)
           end
 
           def truth(condition) = @result.create_field(@body.lower(condition), "present")

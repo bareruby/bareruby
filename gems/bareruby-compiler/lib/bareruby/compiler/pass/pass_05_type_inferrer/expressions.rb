@@ -54,7 +54,12 @@ module BareRuby
           def infer_operator(node, scope)
             return infer_if(*@brast.children_of(node), scope) if @brast.node_type(node) == :if
 
-            @inferrer.conditions.logical(node, scope).first
+            condition = @inferrer.conditions.logical(node, scope).first
+            left, right = @result.children_of(condition)
+            left_type = @result.type_of(left)
+            return condition unless left_type == :nil || @result.nilable?(left_type)
+
+            @result.create_logical(@brast.node_type(node), left, right)
           end
 
           def infer_if(condition_node, consequent_node, alternative_node, scope)
