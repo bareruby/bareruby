@@ -39,14 +39,19 @@ module BareRuby
         end
 
         def call_method(node, (owner, method), receiver, self_type, arguments)
-          types = types_of(arguments)
-          if method[:rows]
-            row = @native_rows.select(node, owner, method, self_type, types)
-            return @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
-          end
+          return call_native(node, [owner, method], [receiver, self_type], arguments) if method[:rows]
 
-          function = @specializer.specialize(owner, @brast.children_of(node)[1], method, self_type, types)
+          function = @specializer.specialize(owner, @brast.children_of(node)[1], method, self_type, types_of(arguments))
           @result.create_method_call(function, receiver, arguments)
+        end
+
+        def call_native(node, (owner, method), (receiver, self_type), arguments)
+          types = types_of(arguments)
+          nilable = types.index { @result.nilable?(it) }
+          return @nilable_calls.split(node, [owner, method], [receiver, self_type], [arguments, nilable]) if nilable
+
+          row = @native_rows.select(node, owner, method, self_type, types)
+          @result.create_native_call("BareRuby::#{owner}", row, receiver, arguments)
         end
 
         def infer_arguments(node, method, argument_nodes, scope)

@@ -23,6 +23,16 @@ module BareRuby
             dispatch(node, receiver || @result.create_self(self_type), found, arguments)
           end
 
+          def split(node, found, (receiver, self_type), (arguments, index))
+            argument = arguments[index]
+            value = @result.create_dispatch_value(@result.type_of(argument).last)
+            calls = [value, @result.create_nil].map do |replacement|
+              replaced = arguments.dup.tap { it[index] = replacement }
+              @inferrer.call_method(node, found, receiver, self_type, replaced)
+            end
+            @result.create_nilable_dispatch(argument, value, *calls)
+          end
+
           private
 
           def shared?(value_found, nil_found) = value_found == nil_found && !value_found.last[:rows]
