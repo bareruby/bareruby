@@ -288,4 +288,30 @@ RSpec.describe "Integer" do
       it { is_expected.to eq("1\n") }
     end
   end
+
+  describe "#-@" do
+    subject(:output) { output_of(source) }
+
+    context "with a positive Int" do
+      let(:source) do
+        <<~RUBY
+          x = 7
+          puts(-x)
+        RUBY
+      end
+
+      it { is_expected.to eq("-7\n") }
+    end
+
+    context "with a negative Int" do
+      let(:source) do
+        <<~RUBY
+          x = -7
+          puts(-x)
+        RUBY
+      end
+
+      it { is_expected.to eq("7\n") }
+    end
+  end
 end
