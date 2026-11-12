@@ -41,3 +41,7 @@ bool BareRuby::Float::le_ovl_float(float self, float other) {
 bool BareRuby::Float::gt_ovl_float(float self, float other) {
   return self > other;
 }
+
+bool BareRuby::Float::ge_ovl_float(float self, float other) {
+  return self >= other;
+}
