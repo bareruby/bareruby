@@ -18,4 +18,7 @@ class Numeric
 
   # rubocop:disable-next Naming/PredicateMethod, Style/ReturnNilInPredicateMethodDefinition -- infinite? returns nil for a finite value, as CRuby does
   def infinite? = nil
+
+  # rubocop:disable-next Style/NumericPredicate -- abs compares with 0 without calling negative?, as CRuby's num_abs does
+  def abs = self < 0 ? -self : self
 end
