@@ -15,3 +15,7 @@ float BareRuby::Float::minus_ovl_float(float self, float other) {
 float BareRuby::Float::mul_ovl_float(float self, float other) {
   return self * other;
 }
+
+float BareRuby::Float::div_ovl_float(float self, float other) {
+  return self / other;
+}
