@@ -44,4 +44,20 @@ RSpec.describe "Float" do
       it { is_expected.to eq("true\n") }
     end
   end
+
+  describe "#+" do
+    subject(:output) { output_of(source) }
+
+    context "with two Floats" do
+      let(:source) { "puts 1.5 + 2.25 == 3.75" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a sum that rounds to binary32" do
+      let(:source) { "puts 16777216.0 + 1.0 == 16777216.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
