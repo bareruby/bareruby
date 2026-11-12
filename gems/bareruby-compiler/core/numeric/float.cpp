@@ -33,3 +33,7 @@ float BareRuby::Float::modulo_ovl_float(float self, float other) {
 bool BareRuby::Float::lt_ovl_float(float self, float other) {
   return self < other;
 }
+
+bool BareRuby::Float::le_ovl_float(float self, float other) {
+  return self <= other;
+}
