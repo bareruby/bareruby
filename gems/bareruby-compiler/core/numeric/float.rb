@@ -33,4 +33,5 @@ class Float < Numeric
   Primitive.native_def :to_i, function: :to_i_ovl_float, returns: Int, parameters: { self: Float }
   Primitive.native_def :truncate, function: :truncate_ovl_float, returns: Int, parameters: { self: Float }
   Primitive.native_def :floor, function: :floor_ovl_float, returns: Int, parameters: { self: Float }
+  Primitive.native_def :ceil, function: :ceil_ovl_float, returns: Int, parameters: { self: Float }
 end

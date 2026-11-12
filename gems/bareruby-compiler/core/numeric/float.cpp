@@ -127,3 +127,7 @@ int32_t BareRuby::Float::truncate_ovl_float(float self) {
 int32_t BareRuby::Float::floor_ovl_float(float self) {
   return static_cast<int32_t>(std::floor(self));
 }
+
+int32_t BareRuby::Float::ceil_ovl_float(float self) {
+  return static_cast<int32_t>(std::ceil(self));
+}
