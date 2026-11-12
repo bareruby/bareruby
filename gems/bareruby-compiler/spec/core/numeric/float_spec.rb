@@ -304,4 +304,38 @@ RSpec.describe "Float" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#equal?" do
+    subject(:output) { output_of(source) }
+
+    context "with an equal Float" do
+      let(:source) { "puts 1.5.equal?(1.5)" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a different Float" do
+      let(:source) { "puts 1.5.equal?(2.5)" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with zero of the opposite sign" do
+      let(:source) { "puts 0.0.equal?(-0.0)" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with the same NaN" do
+      let(:source) do
+        <<~SOURCE
+          zero = 0.0
+          nan = zero / zero
+          puts nan.equal?(nan)
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
