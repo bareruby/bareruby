@@ -314,4 +314,20 @@ RSpec.describe "Integer" do
       it { is_expected.to eq("7\n") }
     end
   end
+
+  describe "#equal?" do
+    subject(:output) { output_of(source) }
+
+    context "with an equal Int" do
+      let(:source) { "puts 7.equal?(7)" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a different Int" do
+      let(:source) { "puts 7.equal?(8)" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
