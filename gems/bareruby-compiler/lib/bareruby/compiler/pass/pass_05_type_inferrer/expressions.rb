@@ -30,7 +30,7 @@ module BareRuby
             when :self then @result.create_self(scope[:self])
             when :local_write then infer_local_write(*children, scope)
             when :while then infer_while(*children, scope)
-            when :and, :if then infer_operator(node, scope)
+            when :and, :or, :if then infer_operator(node, scope)
             when :array then infer_array(node, children.first, scope)
             else @definitions.error(node, "unsupported expression #{@brast.node_type(node)}")
             end
@@ -52,7 +52,11 @@ module BareRuby
 
           def infer_operator(node, scope)
             operands = @brast.children_of(node).map { @inferrer.infer(it, scope) }
-            @brast.node_type(node) == :and ? @result.create_and(*operands) : @result.create_if(*operands)
+            case @brast.node_type(node)
+            when :and then @result.create_and(*operands)
+            when :or then @result.create_or(*operands)
+            else @result.create_if(*operands)
+            end
           end
 
           def infer_local_write(name, value_node, scope)

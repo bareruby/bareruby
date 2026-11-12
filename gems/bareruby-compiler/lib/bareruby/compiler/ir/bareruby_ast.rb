@@ -46,6 +46,8 @@ module BareRuby
 
       def create_and(left, right, span) = build(:and, [left, right], span)
 
+      def create_or(left, right, span) = build(:or, [left, right], span)
+
       def create_if(condition, consequent, alternative, span) = build(:if, [condition, consequent, alternative], span)
 
       def create_forwarding(span) = build(:forwarding, [], span)

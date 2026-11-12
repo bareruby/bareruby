@@ -58,11 +58,16 @@ module BareRuby
         def read_control(node, span)
           case node
           when Prism::WhileNode then @result.create_while(read(node.predicate), read_statements(node.statements), span)
-          when Prism::AndNode then @result.create_and(read(node.left), read(node.right), span)
+          when Prism::AndNode, Prism::OrNode then read_logical(node, span)
           when Prism::ParenthesesNode then read(node.body.body.last)
           when Prism::IfNode then read_if(node, span)
           else read_literal(node, span)
           end
+        end
+
+        def read_logical(node, span)
+          operands = [read(node.left), read(node.right), span]
+          node.is_a?(Prism::AndNode) ? @result.create_and(*operands) : @result.create_or(*operands)
         end
 
         def read_if(node, span)

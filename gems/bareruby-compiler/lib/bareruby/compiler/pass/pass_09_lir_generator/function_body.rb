@@ -70,6 +70,7 @@ module BareRuby
             when :self then self_literal
             when :local_write then @result.create_assignment(variable(children.first), lower(children.last))
             when :and then @result.create_binary("&&", *children.map { lower(it) })
+            when :or then @result.create_binary("||", *children.map { lower(it) })
             when :if then conditional(*children)
             else @arrays.lower(node)
             end
