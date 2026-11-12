@@ -74,3 +74,7 @@ int32_t BareRuby::Integer::modulo_ovl_int(int32_t self, int32_t other) {
 int32_t BareRuby::Integer::uminus_ovl_int(int32_t self) {
   return -self;
 }
+
+float BareRuby::Integer::plus_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) + other;
+}
