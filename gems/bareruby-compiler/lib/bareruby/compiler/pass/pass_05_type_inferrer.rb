@@ -72,6 +72,7 @@ module BareRuby
           @native_rows = NativeRows.new(@brast, @definitions)
           @specializer = Specializer.new(@result, self)
           @bool_calls = BoolCalls.new(@result, self)
+          @nilable_calls = NilableCalls.new(@result, @definitions, self)
         end
 
         def infer_literal(node, value, scope)
@@ -104,6 +105,7 @@ module BareRuby
           receiver = receiver_node && infer(receiver_node, scope)
           self_type = receiver ? @result.type_of(receiver) : scope[:self]
           return @bool_calls.infer(node, receiver, [name, argument_nodes], scope) if self_type == :Bool
+          return @nilable_calls.infer(node, receiver, [name, argument_nodes], scope) if @result.nilable?(self_type)
 
           owner, method = find_method(node, self_type, name)
           arguments = infer_arguments(node, method, argument_nodes, scope)
@@ -162,3 +164,4 @@ require_relative "pass_05_type_inferrer/native_rows"
 require_relative "pass_05_type_inferrer/bool_calls"
 require_relative "pass_05_type_inferrer/flow"
 require_relative "pass_05_type_inferrer/conditions"
+require_relative "pass_05_type_inferrer/nilable_calls"

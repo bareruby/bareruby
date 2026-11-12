@@ -5,12 +5,21 @@ module BareRuby
     module Pass
       class LirGenerator
         class NilableLowering
+          NODE_TYPES = %i[nilable_dispatch dispatch_value].freeze
+
           def initialize(typed_ast, lir, names, body, storages)
             @tast = typed_ast
             @result = lir
             @names = names
             @body = body
             @storages = storages
+            @dispatch_values = {}.compare_by_identity
+          end
+
+          def lower(node)
+            return dispatch(node, *@tast.children_of(node)) if @tast.node_type(node) == :nilable_dispatch
+
+            @result.create_field(@dispatch_values.fetch(node), "value")
           end
 
           def read(name, type)
@@ -49,6 +58,15 @@ module BareRuby
           end
 
           private
+
+          def dispatch(node, receiver, value, value_call, nil_call)
+            temporary = @body.named_temporary(@names.cpp_type(@tast.type_of(receiver)))
+            @dispatch_values[value] = temporary
+            type = @tast.type_of(node)
+            branches = [value_call, nil_call].map { type == :nil ? discard(it) : coerce(it, type) }
+            assignment = @result.create_assignment(temporary, @body.lower(receiver))
+            comma(assignment, @result.create_conditional(@result.create_field(temporary, "present"), *branches))
+          end
 
           def variable(name) = @result.create_literal(@names.variable_name(name))
 

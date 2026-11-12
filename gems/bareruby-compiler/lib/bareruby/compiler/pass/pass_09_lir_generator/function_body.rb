@@ -29,6 +29,7 @@ module BareRuby
           def lower(node)
             return @arrays.lower(node) if ArrayLowering::NODE_TYPES.include?(@tast.node_type(node))
             return @calls.lower(node) if CallLowering::NODE_TYPES.include?(@tast.node_type(node))
+            return @nilables.lower(node) if NilableLowering::NODE_TYPES.include?(@tast.node_type(node))
 
             lower_value(node)
           end
@@ -37,6 +38,12 @@ module BareRuby
             name = "temporary#{@temporaries += 1}"
             @prelude << @result.create_variable_definition(type, name, values)
             @result.create_address(name)
+          end
+
+          def named_temporary(type)
+            name = "temporary#{@temporaries += 1}"
+            @prelude << @result.create_variable_definition(type, name)
+            @result.create_literal(name)
           end
 
           def self_literal = @result.create_literal("self")

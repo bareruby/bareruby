@@ -75,6 +75,13 @@ module BareRuby
 
       def create_array_new(length, value) = build(:array_new, [length, value], [:array, type_of(value)])
 
+      def create_dispatch_value(type) = build(:dispatch_value, [], type)
+
+      def create_nilable_dispatch(receiver, value, value_call, nil_call)
+        build(:nilable_dispatch, [receiver, value, value_call, nil_call],
+              merge_types(type_of(value_call), type_of(nil_call)))
+      end
+
       def create_class_reference(name) = build(:class_reference, [name], [:class, name])
 
       def create_boolean(value) = build(:boolean, [value], :Bool)
