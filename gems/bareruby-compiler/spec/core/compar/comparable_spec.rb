@@ -132,4 +132,31 @@ RSpec.describe "Comparable" do
       it { is_expected.to eq("false\n") }
     end
   end
+
+  describe "#==" do
+    subject(:output) { output_of(classes + source) }
+
+    context "with the same object" do
+      let(:source) do
+        <<~SOURCE
+          low = Low.new
+          puts low == low
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with another object that <=> finds equal" do
+      let(:source) { "puts Low.new == Low.new" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an object that <=> finds different" do
+      let(:source) { "puts Low.new == High.new" }
+
+      it { is_expected.to eq("false\n") }
+    end
+  end
 end
