@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "float.native.hpp"
 
 bool BareRuby::Float::eq_ovl_float(float self, float other) {
@@ -22,4 +24,8 @@ float BareRuby::Float::div_ovl_float(float self, float other) {
 
 float BareRuby::Float::uminus_ovl_float(float self) {
   return -self;
+}
+
+float BareRuby::Float::modulo_ovl_float(float self, float other) {
+  return std::fmod(self, other);
 }
