@@ -6,7 +6,7 @@ module BareRuby
       class LirGenerator
         class CppNames
           STRUCT_NAMESPACES = %w[BareRuby generated].freeze
-          FIXED_TYPES = { Bool: "bool", UInt8: "uint8_t", UInt64: "uint64_t", nil: "void" }.freeze
+          FIXED_TYPES = { Bool: "bool", UInt8: "uint8_t", UInt64: "uint64_t", Float: "float", nil: "void" }.freeze
 
           def initialize(int_width)
             @int_width = int_width

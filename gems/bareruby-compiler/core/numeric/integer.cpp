@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 
@@ -73,4 +74,56 @@ int32_t BareRuby::Integer::modulo_ovl_int(int32_t self, int32_t other) {
 
 int32_t BareRuby::Integer::uminus_ovl_int(int32_t self) {
   return -self;
+}
+
+float BareRuby::Integer::plus_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) + other;
+}
+
+float BareRuby::Integer::minus_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) - other;
+}
+
+float BareRuby::Integer::mul_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) * other;
+}
+
+float BareRuby::Integer::div_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) / other;
+}
+
+float BareRuby::Integer::modulo_ovl_int_float(int32_t self, float other) {
+  return std::fmod(static_cast<float>(self), other);
+}
+
+bool BareRuby::Integer::eq_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) == other;
+}
+
+bool BareRuby::Integer::lt_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) < other;
+}
+
+bool BareRuby::Integer::le_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) <= other;
+}
+
+bool BareRuby::Integer::gt_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) > other;
+}
+
+bool BareRuby::Integer::ge_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) >= other;
+}
+
+float BareRuby::Integer::to_f_ovl_int(int32_t self) {
+  return static_cast<float>(self);
+}
+
+float BareRuby::Integer::fdiv_ovl_int(int32_t self, int32_t other) {
+  return static_cast<float>(self) / static_cast<float>(other);
+}
+
+float BareRuby::Integer::fdiv_ovl_int_float(int32_t self, float other) {
+  return static_cast<float>(self) / other;
 }

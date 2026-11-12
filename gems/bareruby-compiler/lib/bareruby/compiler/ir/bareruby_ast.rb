@@ -36,6 +36,8 @@ module BareRuby
 
       def create_constant(name, span) = build(:constant, [name], span)
 
+      def create_constant_path(parent, name, span) = build(:constant_path, [parent, name], span)
+
       def create_local(name, span) = build(:local, [name], span)
 
       def create_local_write(name, value, span) = build(:local_write, [name, value], span)
@@ -57,6 +59,8 @@ module BareRuby
       def create_boolean(value, span) = build(:boolean, [value], span)
 
       def create_integer(value, span) = build(:integer, [value], span)
+
+      def create_float(text, span) = build(:float, [text], span)
 
       def create_nil(span) = build(:nil, [], span)
 

@@ -32,6 +32,7 @@ module BareRuby
             when :while then infer_while(*children, scope)
             when :and, :or, :if then infer_operator(node, scope)
             when :array then infer_array(node, children.first, scope)
+            when :constant_path then infer_constant_path(node, *children)
             else @definitions.error(node, "unsupported expression #{@brast.node_type(node)}")
             end
           end
@@ -57,6 +58,14 @@ module BareRuby
             when :or then @result.create_or(*operands)
             else @result.create_if(*operands)
             end
+          end
+
+          def infer_constant_path(node, parent, name)
+            owner = @brast.children_of(parent).first
+            row = @definitions.native_constant(owner, name)
+            @definitions.error(node, "uninitialized constant #{owner}::#{name}") unless row
+
+            @result.create_native_call("BareRuby::#{owner}", row, nil, [])
           end
 
           def infer_local_write(name, value_node, scope)

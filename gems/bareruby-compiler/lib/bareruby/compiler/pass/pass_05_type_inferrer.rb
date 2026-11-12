@@ -37,10 +37,7 @@ module BareRuby
           when :call then infer_call(node, scope)
           when :local then @result.create_local(value, scope[:locals].fetch(value))
           when :constant then @result.create_class_reference(value)
-          when :boolean then @result.create_boolean(value)
-          when :integer then @result.create_integer(value)
-          when :nil then @result.create_nil
-          else @expressions.infer(node, scope)
+          else infer_literal(node, value, scope)
           end
         end
 
@@ -70,6 +67,16 @@ module BareRuby
         end
 
         private
+
+        def infer_literal(node, value, scope)
+          case @brast.node_type(node)
+          when :boolean then @result.create_boolean(value)
+          when :integer then @result.create_integer(value)
+          when :float then @result.create_float(value)
+          when :nil then @result.create_nil
+          else @expressions.infer(node, scope)
+          end
+        end
 
         def infer_top_level
           scope = { self: TOP_LEVEL_SELF, locals: {}, forwarded: nil }

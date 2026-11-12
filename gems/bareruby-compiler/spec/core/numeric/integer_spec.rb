@@ -37,6 +37,30 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("false\n") }
     end
+
+    context "with a larger Float" do
+      let(:source) { "puts 1 == 1.5" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with an equal Float" do
+      let(:source) { "puts 1 == 1.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a smaller Float" do
+      let(:source) { "puts 2 == 1.5" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a Float that the Int rounds to as binary32" do
+      let(:source) { "puts 16777217 == 16777216.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
   end
 
   describe "#integer?" do
@@ -101,6 +125,30 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("false\n") }
     end
+
+    context "with a larger Float" do
+      let(:source) { "puts 1 < 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an equal Float" do
+      let(:source) { "puts 1 < 1.0" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a smaller Float" do
+      let(:source) { "puts 2 < 1.5" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a Float that the Int rounds to as binary32" do
+      let(:source) { "puts 16777217 < 16777216.0" }
+
+      it { is_expected.to eq("false\n") }
+    end
   end
 
   describe "#<=" do
@@ -122,6 +170,30 @@ RSpec.describe "Integer" do
       let(:source) { "puts 8 <= 7" }
 
       it { is_expected.to eq("false\n") }
+    end
+
+    context "with a larger Float" do
+      let(:source) { "puts 1 <= 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an equal Float" do
+      let(:source) { "puts 1 <= 1.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a smaller Float" do
+      let(:source) { "puts 2 <= 1.5" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a Float that the Int rounds to as binary32" do
+      let(:source) { "puts 16777217 <= 16777216.0" }
+
+      it { is_expected.to eq("true\n") }
     end
   end
 
@@ -145,6 +217,30 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("true\n") }
     end
+
+    context "with a larger Float" do
+      let(:source) { "puts 1 > 1.5" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with an equal Float" do
+      let(:source) { "puts 1 > 1.0" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with a smaller Float" do
+      let(:source) { "puts 2 > 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a Float that the Int rounds to as binary32" do
+      let(:source) { "puts 16777217 > 16777216.0" }
+
+      it { is_expected.to eq("false\n") }
+    end
   end
 
   describe "#>=" do
@@ -164,6 +260,30 @@ RSpec.describe "Integer" do
 
     context "with a larger Int" do
       let(:source) { "puts 8 >= 7" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a larger Float" do
+      let(:source) { "puts 1 >= 1.5" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with an equal Float" do
+      let(:source) { "puts 1 >= 1.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a smaller Float" do
+      let(:source) { "puts 2 >= 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a Float that the Int rounds to as binary32" do
+      let(:source) { "puts 16777217 >= 16777216.0" }
 
       it { is_expected.to eq("true\n") }
     end
@@ -205,6 +325,12 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("-1\n") }
     end
+
+    context "with a Float" do
+      let(:source) { "puts 1 + 0.5 == 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
   end
 
   describe "#-" do
@@ -221,6 +347,12 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("-1\n") }
     end
+
+    context "with a Float" do
+      let(:source) { "puts 2 - 0.5 == 1.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
   end
 
   describe "#*" do
@@ -236,6 +368,12 @@ RSpec.describe "Integer" do
       let(:source) { "puts 7 * -8" }
 
       it { is_expected.to eq("-56\n") }
+    end
+
+    context "with a Float" do
+      let(:source) { "puts 3 * 0.5 == 1.5" }
+
+      it { is_expected.to eq("true\n") }
     end
   end
 
@@ -265,6 +403,12 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("-3\n") }
     end
+
+    context "with a Float" do
+      let(:source) { "puts 7 / 2.0 == 3.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
   end
 
   describe "#%" do
@@ -286,6 +430,12 @@ RSpec.describe "Integer" do
       let(:source) { "puts 7 % -2" }
 
       it { is_expected.to eq("1\n") }
+    end
+
+    context "with a Float" do
+      let(:source) { "puts((-7 % 2.0) == -1.0)" }
+
+      it { is_expected.to eq("true\n") }
     end
   end
 
@@ -328,6 +478,38 @@ RSpec.describe "Integer" do
       let(:source) { "puts 7.equal?(8)" }
 
       it { is_expected.to eq("false\n") }
+    end
+  end
+
+  describe "#to_f" do
+    subject(:output) { output_of(source) }
+
+    context "with an Int" do
+      let(:source) { "puts 3.to_f == 3.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with an Int beyond the binary32 precision" do
+      let(:source) { "puts 16777217.to_f == 16777216.0" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
+
+  describe "#fdiv" do
+    subject(:output) { output_of(source) }
+
+    context "with an Int" do
+      let(:source) { "puts 7.fdiv(2) == 3.5" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a Float" do
+      let(:source) { "puts 7.fdiv(2.0) == 3.5" }
+
+      it { is_expected.to eq("true\n") }
     end
   end
 end

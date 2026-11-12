@@ -7,7 +7,7 @@ module BareRuby
         # The compiler is provisional and will be discarded and rebuilt,
         # so its classes are not split to meet the length limit.
         class Definitions # rubocop:disable Metrics/ClassLength
-          OWNER = { methods: {}, singleton_methods: {}, includes: [], superclass: nil }.freeze
+          OWNER = { methods: {}, singleton_methods: {}, constants: {}, includes: [], superclass: nil }.freeze
 
           attr_reader :statements
 
@@ -25,15 +25,14 @@ module BareRuby
 
           def classes = @owners.filter_map { |name, definition| [name, definition[:superclass]] if definition[:class] }
 
-          def each_native_method
+          def each_native_method(&)
             @owners.each do |owner, definition|
-              definition[:methods].each_value do |method|
-                next unless method[:rows]
-
-                method[:rows].group_by(&:first).each { |path, rows| yield owner, path, rows.map(&:last) }
-              end
+              each_method_rows(owner, definition, &)
+              definition[:constants].each_value { |path, row| yield owner, path, [row] }
             end
           end
+
+          def native_constant(owner, name) = @owners[owner][:constants][name]&.last
 
           def lookup(name, method_name) = callable(find_in(ancestors(name), :methods, method_name))
 
@@ -57,6 +56,14 @@ module BareRuby
           end
 
           private
+
+          def each_method_rows(owner, definition)
+            definition[:methods].each_value do |method|
+              next unless method[:rows]
+
+              method[:rows].group_by(&:first).each { |path, rows| yield owner, path, rows.map(&:last) }
+            end
+          end
 
           def find_in(owners, table, method_name)
             owner = owners.find { @owners[it][table].key?(method_name) }
@@ -116,6 +123,7 @@ module BareRuby
 
           def collect_call(path, owner, node)
             return collect_native_def(path, owner, node) if primitive_call?(node, :native_def)
+            return collect_native_const(path, owner, node) if primitive_call?(node, :native_const)
 
             @owners[owner][:includes] << include_target(node)
           end
@@ -140,6 +148,11 @@ module BareRuby
             methods[name][:rows] << [path, native_row(options)]
           end
 
+          def collect_native_const(path, owner, node)
+            name_node, options = @brast.children_of(node)[2]
+            @owners[owner][:constants][value_of(name_node)] = [path, native_row(options)]
+          end
+
           def include_target(node)
             _receiver, name, arguments = @brast.children_of(node)
             error(node, "unsupported call #{name} in a class body") unless name == :include
@@ -149,7 +162,7 @@ module BareRuby
 
           def native_row(node)
             options = entries(node)
-            parameters = entries(options[:parameters]).transform_values { type_name(it) }
+            parameters = options[:parameters] ? entries(options[:parameters]).transform_values { type_name(it) } : {}
             @tast.create_native_row(value_of(options[:function]), parameters, type_name(options[:returns]))
           end
 
