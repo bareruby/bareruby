@@ -32,7 +32,10 @@ module BareRuby
           def nil_left(operator, left, right, type)
             return @body.lower(left) if operator == :and
 
-            @nilables.coerce(right, type)
+            right_value = @nilables.coerce(right, type)
+            return right_value if CallLowering::NIL_VALUES.include?(@tast.node_type(left))
+
+            @result.create_binary(",", @body.lower(left), right_value)
           end
 
           def branches(operator, temporary, left_type, right, type)
