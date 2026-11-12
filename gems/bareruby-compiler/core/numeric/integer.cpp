@@ -50,3 +50,7 @@ int32_t BareRuby::Integer::abs_ovl_int(int32_t self) {
 bool BareRuby::Integer::zero_p_ovl_int(int32_t self) {
   return self == 0;
 }
+
+bool BareRuby::Integer::le_ovl_int(int32_t self, int32_t other) {
+  return self <= other;
+}
