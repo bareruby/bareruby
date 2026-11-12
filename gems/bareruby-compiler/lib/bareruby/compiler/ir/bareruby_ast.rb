@@ -18,7 +18,9 @@ module BareRuby
 
       def create_module_definition(name, body, span) = build(:module_definition, [name, body], span)
 
-      def create_class_definition(name, body, span) = build(:class_definition, [name, body], span)
+      def create_class_definition(name, body, superclass, span)
+        build(:class_definition, [name, body, superclass], span)
+      end
 
       def create_method_definition(name, parameters, body, span)
         build(:method_definition, [name, parameters, body], span)

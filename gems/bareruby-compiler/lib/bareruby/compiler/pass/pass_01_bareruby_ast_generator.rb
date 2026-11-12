@@ -37,7 +37,7 @@ module BareRuby
           span = span_of(node)
           case node
           when Prism::ModuleNode then @result.create_module_definition(node.name, read_statements(node.body), span)
-          when Prism::ClassNode then @result.create_class_definition(node.name, read_statements(node.body), span)
+          when Prism::ClassNode then read_class_definition(node, span)
           when Prism::DefNode then read_method_definition(node, span)
           when Prism::SingletonClassNode then read_singleton_class(node, span)
           when Prism::CallNode then read_call(node, span)
@@ -88,6 +88,11 @@ module BareRuby
           return @result.create_singleton_method_definition(node.name, parameters, body, span) if singleton
 
           @result.create_method_definition(node.name, parameters, body, span)
+        end
+
+        def read_class_definition(node, span)
+          superclass = node.superclass && read(node.superclass)
+          @result.create_class_definition(node.name, read_statements(node.body), superclass, span)
         end
 
         def read_singleton_class(node, span)
