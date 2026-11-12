@@ -145,6 +145,54 @@ RSpec.describe "Int?" do
     end
   end
 
+  describe "narrowed by short-circuit evaluation" do
+    subject(:output) { output_of(source) }
+
+    context "with the right operand of && as a condition" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x && x > 3 ? 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with nil as the left operand of && as a condition" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 2 < 1
+          puts(x && x > 3 ? 1 : 0)
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with the right operand of ||" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x.nil? || x > 6)
+        RUBY
+      end
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with the false branch of || as a condition" do
+      let(:source) do
+        <<~RUBY
+          x = 5 if 1 < 2
+          puts(x.nil? || 1 > 2 ? 0 : x + 1)
+        RUBY
+      end
+
+      it { is_expected.to eq("6\n") }
+    end
+  end
+
   describe "as a receiver" do
     subject(:output) { output_of(source) }
 
