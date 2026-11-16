@@ -695,6 +695,40 @@ RSpec.describe "Float" do
     end
   end
 
+  describe "#infinite?" do
+    subject(:output) { output_of(source) }
+
+    context "with positive infinity" do
+      let(:source) { "puts(Float::INFINITY.infinite? || 0)" }
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with negative infinity" do
+      let(:source) { "puts((-Float::INFINITY).infinite? || 0)" }
+
+      it { is_expected.to eq("-1\n") }
+    end
+
+    context "with a finite Float" do
+      let(:source) { "puts 1.5.infinite?.nil?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with NaN" do
+      let(:source) do
+        <<~SOURCE
+          zero = 0.0
+          nan = zero / zero
+          puts nan.infinite?.nil?
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
+
   describe "#to_i" do
     subject(:output) { output_of(source) }
 
