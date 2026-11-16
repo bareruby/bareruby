@@ -159,4 +159,46 @@ RSpec.describe "Comparable" do
       it { is_expected.to eq("false\n") }
     end
   end
+  describe "#== with a <=> that may return nil" do
+    subject(:output) { output_of(classes + source) }
+
+    let(:classes) do
+      <<~RUBY
+        class Unordered
+          include Comparable
+
+          def <=>(other) = (0 if 2 < 1)
+        end
+
+        class Same
+          include Comparable
+
+          def <=>(other) = (0 if 1 < 2)
+        end
+      RUBY
+    end
+
+    context "with nil returned by <=>" do
+      let(:source) { "puts Unordered.new == Unordered.new" }
+
+      it { is_expected.to eq("false\n") }
+    end
+
+    context "with the same object and nil returned by <=>" do
+      let(:source) do
+        <<~SOURCE
+          unordered = Unordered.new
+          puts unordered == unordered
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with 0 returned by <=>" do
+      let(:source) { "puts Same.new == Same.new" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
 end
