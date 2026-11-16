@@ -47,4 +47,15 @@ class Float < Numeric
       0
     end
   end
+
+  # rubocop:disable-next Naming/PredicateMethod, Style/ReturnNilInPredicateMethodDefinition -- infinite? returns nil for a finite value, as CRuby does
+  def infinite?
+    if finite?
+      nil
+    elsif self > 0.0
+      1
+    elsif self < 0.0
+      -1
+    end
+  end
 end
