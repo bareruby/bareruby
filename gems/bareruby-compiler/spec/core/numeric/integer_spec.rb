@@ -309,6 +309,30 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("1\n") }
     end
+
+    context "with a larger Float" do
+      let(:source) { "puts((1 <=> 1.5) || 2)" }
+
+      it { is_expected.to eq("-1\n") }
+    end
+
+    context "with an equal Float" do
+      let(:source) { "puts((1 <=> 1.0) || 2)" }
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with a smaller Float" do
+      let(:source) { "puts((2 <=> 1.5) || 2)" }
+
+      it { is_expected.to eq("1\n") }
+    end
+
+    context "with a Float that the Int rounds to as binary32" do
+      let(:source) { "puts((16777217 <=> 16777216.0) || 2)" }
+
+      it { is_expected.to eq("0\n") }
+    end
   end
 
   describe "#+" do
