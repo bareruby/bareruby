@@ -34,6 +34,7 @@ module BareRuby
           when :call then infer_call(node, scope)
           when :local then @result.create_local(value, @flow.read(scope, value))
           when :constant then @result.create_class_reference(value)
+          when :return then @expressions.infer_return(value, scope)
           else infer_literal(node, value, scope)
           end
         end

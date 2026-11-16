@@ -89,7 +89,8 @@ module BareRuby
           definitions = locals.filter_map do |name, type|
             @result.create_variable_definition(@names.cpp_type(type), @names.variable_name(name)) unless type == :nil
           end
-          definitions + FunctionBody.new(@tast, @result, @names, storages).lower_statements(nodes, return_type)
+          definitions + FunctionBody.new(@tast, @result, @names, [storages, return_type])
+                                    .lower_statements(nodes, return_type)
         end
       end
     end

@@ -69,6 +69,8 @@ module BareRuby
         build(:if, [condition, consequent, alternative], merge_types(type_of(consequent), type_of(alternative)))
       end
 
+      def create_return(value) = build(:return, [value], type_of(value))
+
       def create_array(elements, element_type) = build(:array, [elements], [:array, element_type])
 
       def create_array_length(array_type) = build(:array_length, [array_type], :Int)

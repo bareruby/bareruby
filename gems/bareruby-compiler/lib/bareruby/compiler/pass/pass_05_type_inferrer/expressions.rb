@@ -49,6 +49,8 @@ module BareRuby
             end
           end
 
+          def infer_return(value_node, scope) = @result.create_return(@inferrer.infer(value_node, scope))
+
           private
 
           def infer_operator(node, scope)
