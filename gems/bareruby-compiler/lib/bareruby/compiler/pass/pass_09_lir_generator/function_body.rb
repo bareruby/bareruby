@@ -25,7 +25,7 @@ module BareRuby
               last = index == nodes.size - 1 && return_type != :nil
               next lower_control(node, last ? return_type : :nil) if control?(node)
 
-              value = lower(node)
+              value = last ? @nilables.coerce(node, return_type) : lower(node)
               @prelude.slice!(0..) + (last ? return_statements(value, return_type) : [statement(value)])
             end
           end
@@ -129,7 +129,7 @@ module BareRuby
           end
 
           def lower_return(value)
-            value = lower(value)
+            value = @nilables.coerce(value, @return_type)
             @prelude.slice!(0..) + return_statements(value, @return_type)
           end
 
