@@ -44,6 +44,12 @@ int32_t BareRuby::Integer::cmp_ovl_int(int32_t self, int32_t other) {
   return (self > other) - (self < other);
 }
 
+BareRuby::Nilable<int32_t> BareRuby::Integer::cmp_ovl_int_float(int32_t self, float other) {
+  float value = static_cast<float>(self);
+  if (std::isnan(other)) return {false, 0};
+  return {true, (value > other) - (value < other)};
+}
+
 int32_t BareRuby::Integer::abs_ovl_int(int32_t self) {
   return std::abs(self);
 }
