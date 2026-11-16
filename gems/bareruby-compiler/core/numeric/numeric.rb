@@ -12,6 +12,9 @@ class Numeric
   # rubocop:disable-next Style/NumericPredicate -- this defines zero? itself, so writing zero? here would call itself
   def zero? = !!(self == 0)
 
+  # rubocop:disable-next Naming/PredicateMethod, Style/ReturnNilInPredicateMethodDefinition -- nonzero? returns nil for zero and self otherwise, as CRuby does
+  def nonzero? = zero? ? nil : self
+
   def integer? = false
 
   def finite? = true

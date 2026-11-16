@@ -32,17 +32,22 @@ module BareRuby
           def fill_function(function, method)
             scope = scope_of(function, method)
             body = method[:body].map { @inferrer.infer(it, scope) }
-            function.merge!(body:, return_type: body.empty? ? :nil : @result.type_of(body.last),
-                            allocates: scope[:allocates], locals: scope[:locals].except(*scope[:parameters]))
+            function.merge!(body:, return_type: return_type(body, scope[:returns]), allocates: scope[:allocates],
+                            locals: scope[:locals].except(*scope[:parameters]))
             @result.add_function(function)
             function
+          end
+
+          def return_type(body, returns)
+            last_type = body.empty? ? :nil : @result.type_of(body.last)
+            (returns + [last_type]).reduce { |merged, type| @result.merge_types(merged, type) }
           end
 
           def scope_of(function, method)
             parameters = function[:parameters]
             forwarded = Specializer.forwarding?(method) ? parameters.map { @result.create_local(*it) } : nil
             { self: function[:self_type], locals: parameters.to_h, env: parameters.to_h,
-              parameters: parameters.map(&:first), forwarded: }
+              parameters: parameters.map(&:first), forwarded:, returns: [] }
           end
         end
       end

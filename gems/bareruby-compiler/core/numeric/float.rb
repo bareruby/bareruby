@@ -37,4 +37,25 @@ class Float < Numeric
   Primitive.native_def :round, function: :round_ovl_float, returns: Int, parameters: { self: Float }
   Primitive.native_def :fdiv, function: :fdiv_ovl_float, returns: Float, parameters: { self: Float, other: Float }
   Primitive.native_def :fdiv, function: :fdiv_ovl_float_int, returns: Float, parameters: { self: Float, other: Int }
+
+  def <=>(other)
+    if self < other
+      -1
+    elsif self > other
+      1
+    elsif self == other
+      0
+    end
+  end
+
+  # rubocop:disable-next Naming/PredicateMethod, Style/ReturnNilInPredicateMethodDefinition -- infinite? returns nil for a finite value, as CRuby does
+  def infinite?
+    if finite?
+      nil
+    elsif self > 0.0
+      1
+    elsif self < 0.0
+      -1
+    end
+  end
 end

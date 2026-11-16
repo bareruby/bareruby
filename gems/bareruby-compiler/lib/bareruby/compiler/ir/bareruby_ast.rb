@@ -54,6 +54,8 @@ module BareRuby
 
       def create_if(condition, consequent, alternative, span) = build(:if, [condition, consequent, alternative], span)
 
+      def create_return(value, span) = build(:return, [value], span)
+
       def create_forwarding(span) = build(:forwarding, [], span)
 
       def create_boolean(value, span) = build(:boolean, [value], span)

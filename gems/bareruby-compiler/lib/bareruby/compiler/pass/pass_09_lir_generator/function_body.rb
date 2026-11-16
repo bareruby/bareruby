@@ -4,11 +4,14 @@ module BareRuby
   module Compiler
     module Pass
       class LirGenerator
-        class FunctionBody
-          def initialize(typed_ast, lir, names, storages)
+        # The compiler is provisional and will be discarded and rebuilt,
+        # so its classes are not split to meet the length limit.
+        class FunctionBody # rubocop:disable Metrics/ClassLength
+          def initialize(typed_ast, lir, names, (storages, return_type))
             @tast = typed_ast
             @result = lir
             @names = names
+            @return_type = return_type
             @prelude = []
             @temporaries = 0
             @arrays = ArrayLowering.new(typed_ast, lir, names, self)
@@ -19,10 +22,10 @@ module BareRuby
 
           def lower_statements(nodes, return_type)
             nodes.each_with_index.flat_map do |node, index|
-              next lower_while(*@tast.children_of(node)) if @tast.node_type(node) == :while
-
-              value = lower(node)
               last = index == nodes.size - 1 && return_type != :nil
+              next lower_control(node, last ? return_type : :nil) if control?(node)
+
+              value = last ? @nilables.coerce(node, return_type) : lower(node)
               @prelude.slice!(0..) + (last ? return_statements(value, return_type) : [statement(value)])
             end
           end
@@ -106,6 +109,35 @@ module BareRuby
           def lower_while(condition, body)
             condition = lower(condition)
             @prelude.slice!(0..) + [@result.create_while(condition, lower_statements(body, :nil))]
+          end
+
+          def control?(node)
+            case @tast.node_type(node)
+            when :while, :return then true
+            when :if then @tast.children_of(node).drop(1).any? { @tast.node_type(it) == :return }
+            else false
+            end
+          end
+
+          def lower_control(node, return_type)
+            children = @tast.children_of(node)
+            case @tast.node_type(node)
+            when :while then lower_while(*children)
+            when :return then lower_return(children.first)
+            when :if then lower_branches(children.first, children.drop(1), return_type)
+            end
+          end
+
+          def lower_return(value)
+            value = @nilables.coerce(value, @return_type)
+            @prelude.slice!(0..) + return_statements(value, @return_type)
+          end
+
+          # The branches become statements, since C++ cannot return from inside a conditional expression.
+          def lower_branches(condition, branches, return_type)
+            condition = truth(condition)
+            prelude = @prelude.slice!(0..)
+            prelude + [@result.create_if(condition, *branches.map { lower_statements([it], return_type) })]
           end
         end
       end

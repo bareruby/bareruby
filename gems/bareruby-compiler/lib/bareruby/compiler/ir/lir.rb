@@ -68,6 +68,8 @@ module BareRuby
 
       def create_while(condition, body) = { kind: :while, condition:, body: }
 
+      def create_if(condition, consequent, alternative) = { kind: :if, condition:, consequent:, alternative: }
+
       def create_expression_statement(value) = { kind: :expression_statement, value: }
 
       def create_return(value) = { kind: :return, value: }

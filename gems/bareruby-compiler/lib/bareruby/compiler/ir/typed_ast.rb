@@ -69,6 +69,8 @@ module BareRuby
         build(:if, [condition, consequent, alternative], merge_types(type_of(consequent), type_of(alternative)))
       end
 
+      def create_return(value) = build(:return, [value], :never)
+
       def create_array(elements, element_type) = build(:array, [elements], [:array, element_type])
 
       def create_array_length(array_type) = build(:array_length, [array_type], :Int)
@@ -110,7 +112,8 @@ module BareRuby
       end
 
       def merge_types(first, second)
-        return first if first == second
+        return first if first == second || second == :never
+        return second if first == :never
 
         values = [first, second].map { nilable?(it) ? it.last : it }.reject { it == :nil }.uniq
         values.size == 1 && NILABLE_VALUES.include?(values.first) ? [:nilable, values.first] : first

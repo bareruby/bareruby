@@ -63,6 +63,7 @@ module BareRuby
           when Prism::ParenthesesNode then read(node.body.body.last)
           when Prism::IfNode then read_if(node, span)
           when Prism::UnlessNode then read_unless(node, span)
+          when Prism::ReturnNode then read_return(node, span)
           else read_literal(node, span)
           end
         end
@@ -80,6 +81,11 @@ module BareRuby
         def read_unless(node, span)
           @result.create_if(read(node.predicate), read_else(node.else_clause, span), read_branch(node.statements, span),
                             span)
+        end
+
+        def read_return(node, span)
+          value = node.arguments ? read(node.arguments.arguments.first) : @result.create_nil(span)
+          @result.create_return(value, span)
         end
 
         def read_else(node, span) = node.is_a?(Prism::IfNode) ? read(node) : read_branch(node&.statements, span)

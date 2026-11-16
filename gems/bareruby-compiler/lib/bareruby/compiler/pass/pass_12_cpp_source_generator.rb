@@ -94,7 +94,14 @@ module BareRuby
           when :variable_definition then "#{node[:type]} #{node[:name]}{#{arguments(node[:values])}}"
           when :expression_statement then expression(node[:value])
           when :while then while_statement(node, indent)
+          when :if then if_statement(node, indent)
           end
+        end
+
+        def if_statement(node, indent)
+          inner = "#{indent}  "
+          "if (#{expression(node[:condition])}) {\n#{block(node[:consequent], inner)}#{indent}} " \
+            "else {\n#{block(node[:alternative], inner)}#{indent}}"
         end
 
         def while_statement(node, indent)
