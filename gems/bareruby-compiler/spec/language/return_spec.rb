@@ -91,4 +91,33 @@ RSpec.describe "return" do
       it { is_expected.to eq("3\n") }
     end
   end
+
+  describe "with code after it" do
+    subject(:output) { output_of(classes + source) }
+
+    let(:classes) do
+      <<~RUBY
+        class Foo
+          def self.maybe(flag) = flag ? 3 : nil
+
+          def self.double(value)
+            return 0 if value.nil?
+            value + value
+          end
+        end
+      RUBY
+    end
+
+    context "with the branch taken" do
+      let(:source) { "puts Foo.double(Foo.maybe(false))" }
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with the branch not taken" do
+      let(:source) { "puts Foo.double(Foo.maybe(true))" }
+
+      it { is_expected.to eq("6\n") }
+    end
+  end
 end
