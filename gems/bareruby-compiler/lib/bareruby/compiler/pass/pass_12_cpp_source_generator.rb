@@ -15,6 +15,7 @@ module BareRuby
         def run
           @files = @lir.headers.to_h { [it[:name], header(it)] }
           @files["symbol_table.hpp"] = symbol_table_header
+          @files["nilable.hpp"] = nilable_header
           @files["main.cpp"] = main_source
           self
         end
@@ -27,7 +28,13 @@ module BareRuby
           end
           class_definition = "class #{header[:class_name]} {\npublic:\n#{declarations.join}};\n"
           forward = header[:structs].map { in_namespaces(%w[BareRuby generated], "struct #{it};\n") }.join
-          "#pragma once\n#include <cstdint>\n#{forward}#{in_namespaces(header[:namespaces], class_definition)}"
+          "#pragma once\n#include <cstdint>\n#{nilable_include(header)}#{forward}" \
+            "#{in_namespaces(header[:namespaces], class_definition)}"
+        end
+
+        def nilable_include(header)
+          nilable = header[:declarations].any? { it[:return_type].start_with?("BareRuby::Nilable<") }
+          nilable ? "#include \"nilable.hpp\"\n" : ""
         end
 
         def symbol_table_header
@@ -36,10 +43,10 @@ module BareRuby
           "#pragma once\n#include <cstdint>\n#{in_namespaces(["BareRuby"], declarations)}"
         end
 
-        def main_source = includes + symbol_names + array_struct + nilable_struct + structs + prototypes + definitions
+        def main_source = includes + symbol_names + array_struct + structs + prototypes + definitions
 
         def includes
-          headers = @lir.headers.map { "\"#{it[:name]}\"" } + ["\"symbol_table.hpp\""]
+          headers = @lir.headers.map { "\"#{it[:name]}\"" } + ["\"symbol_table.hpp\"", "\"nilable.hpp\""]
           (["<cstdint>"] + headers).map { "#include #{it}\n" }.join
         end
 
@@ -63,8 +70,9 @@ module BareRuby
           in_namespaces(["BareRuby"], "template <typename T>\nstruct Array {\n#{fields}};\n#{constructor}")
         end
 
-        def nilable_struct
-          in_namespaces(["BareRuby"], "template <typename T>\nstruct Nilable {\n  bool present;\n  T value;\n};\n")
+        def nilable_header
+          definition = "template <typename T>\nstruct Nilable {\n  bool present;\n  T value;\n};\n"
+          "#pragma once\n#{in_namespaces(["BareRuby"], definition)}"
         end
 
         def structs

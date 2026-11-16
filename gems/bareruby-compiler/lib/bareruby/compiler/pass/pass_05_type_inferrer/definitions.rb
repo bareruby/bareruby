@@ -170,7 +170,20 @@ module BareRuby
 
           def value_of(node) = @brast.children_of(node).first
 
-          def type_name(node) = @brast.node_type(node) == :nil ? :nil : @tast.type_named(value_of(node))
+          def type_name(node)
+            case @brast.node_type(node)
+            when :nil then :nil
+            when :call then nilable_type_name(node)
+            else @tast.type_named(value_of(node))
+            end
+          end
+
+          def nilable_type_name(node)
+            name = @brast.children_of(node)[1].to_s
+            error(node, "unsupported type #{name}") unless name.end_with?("?")
+
+            [:nilable, @tast.type_named(name.delete_suffix("?").to_sym)]
+          end
 
           public
 
