@@ -333,6 +333,18 @@ RSpec.describe "Integer" do
 
       it { is_expected.to eq("0\n") }
     end
+
+    context "with NaN" do
+      let(:source) do
+        <<~SOURCE
+          zero = 0.0
+          nan = zero / zero
+          puts((1 <=> nan).nil?)
+        SOURCE
+      end
+
+      it { is_expected.to eq("true\n") }
+    end
   end
 
   describe "#+" do
