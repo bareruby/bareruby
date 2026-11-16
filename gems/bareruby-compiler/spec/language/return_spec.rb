@@ -55,4 +55,40 @@ RSpec.describe "return" do
       it { is_expected.to eq("0\n") }
     end
   end
+
+  describe "with a value of another type than the last expression" do
+    subject(:output) { output_of(source) }
+
+    context "with the branch taken" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            def self.positive(value)
+              return nil if value < 0
+              value
+            end
+          end
+          puts Foo.positive(-3) || 0
+        RUBY
+      end
+
+      it { is_expected.to eq("0\n") }
+    end
+
+    context "with the branch not taken" do
+      let(:source) do
+        <<~RUBY
+          class Foo
+            def self.positive(value)
+              return nil if value < 0
+              value
+            end
+          end
+          puts Foo.positive(3) || 0
+        RUBY
+      end
+
+      it { is_expected.to eq("3\n") }
+    end
+  end
 end
