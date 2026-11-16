@@ -120,6 +120,34 @@ RSpec.describe "Numeric" do
     end
   end
 
+  describe "#nonzero?" do
+    subject(:output) { output_of(source) }
+
+    context "with a nonzero Int" do
+      let(:source) { "puts(5.nonzero? || 0)" }
+
+      it { is_expected.to eq("5\n") }
+    end
+
+    context "with the Int 0" do
+      let(:source) { "puts 0.nonzero?.nil?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with a nonzero Float" do
+      let(:source) { "puts((1.5.nonzero? || 0.0) == 1.5)" }
+
+      it { is_expected.to eq("true\n") }
+    end
+
+    context "with the Float 0.0" do
+      let(:source) { "puts 0.0.nonzero?.nil?" }
+
+      it { is_expected.to eq("true\n") }
+    end
+  end
+
   describe "#integer?" do
     subject(:output) { output_of(classes + source) }
 
