@@ -46,7 +46,14 @@ module BareRuby
         Logical = Data.define(:operator, :left, :right)
         Loop = Data.define(:kind, :condition, :body, :test)
         ForLoop = Data.define(:variable, :collection, :body)
+        Transfer = Data.define(:kind, :value)
+        ExceptionRegion = Data.define(:body, :rescues, :alternative, :ensure_body)
+        RescueClause = Data.define(:exception_classes, :variable, :body)
+        RescueModifier = Data.define(:expression, :rescue_value)
         Literal = Data.define(:kind, :value)
+        Interpolation = Data.define(:parts)
+        ArrayLiteral = Data.define(:elements)
+        RangeLiteral = Data.define(:low, :high, :exclusive)
 
         Span = Data.define(:path, :start_offset, :end_offset, :start_line, :start_column, :end_line, :end_column)
         Scope = Data.define(:kind, :variable_parent, :lexical_parent)
@@ -111,7 +118,18 @@ module BareRuby
           Logical => { name: :logical, fields: { operator: :value, left: :child, right: :child } },
           Loop => { name: :loop, fields: { kind: :value, condition: :child, body: :child, test: :value } },
           ForLoop => { name: :for_loop, fields: { variable: :variable, collection: :child, body: :child } },
-          Literal => { name: :literal, fields: { kind: :value, value: :value } }
+          Transfer => { name: :transfer, fields: { kind: :value, value: :optional_child } },
+          ExceptionRegion => { name: :exception_region,
+                               fields: { body: :child, rescues: :children, alternative: :optional_child,
+                                         ensure_body: :optional_child } },
+          RescueClause => { name: :rescue_clause,
+                            fields: { exception_classes: :children, variable: :variable, body: :child } },
+          RescueModifier => { name: :rescue_modifier, fields: { expression: :child, rescue_value: :child } },
+          Literal => { name: :literal, fields: { kind: :value, value: :value } },
+          Interpolation => { name: :interpolation, fields: { parts: :children } },
+          ArrayLiteral => { name: :array_literal, fields: { elements: :children } },
+          RangeLiteral => { name: :range_literal,
+                            fields: { low: :optional_child, high: :optional_child, exclusive: :value } }
         }.freeze
 
         def initialize
@@ -241,7 +259,27 @@ module BareRuby
           add(ForLoop.new(variable:, collection:, body:), span)
         end
 
+        def create_transfer(span:, kind:, value:) = add(Transfer.new(kind:, value:), span)
+
+        def create_exception_region(span:, body:, rescues:, alternative:, ensure_body:)
+          add(ExceptionRegion.new(body:, rescues:, alternative:, ensure_body:), span)
+        end
+
+        def create_rescue_clause(span:, exception_classes:, variable:, body:)
+          add(RescueClause.new(exception_classes:, variable:, body:), span)
+        end
+
+        def create_rescue_modifier(span:, expression:, rescue_value:)
+          add(RescueModifier.new(expression:, rescue_value:), span)
+        end
+
         def create_literal(span:, kind:, value:) = add(Literal.new(kind:, value:), span)
+        def create_interpolation(span:, parts:) = add(Interpolation.new(parts:), span)
+        def create_array_literal(span:, elements:) = add(ArrayLiteral.new(elements:), span)
+
+        def create_range_literal(span:, low:, high:, exclusive:)
+          add(RangeLiteral.new(low:, high:, exclusive:), span)
+        end
 
         def inspect_text
           lines = []
