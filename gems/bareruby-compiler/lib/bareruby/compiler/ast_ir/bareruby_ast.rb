@@ -13,8 +13,17 @@ module BareRuby
         SingletonClassDefinition = Data.define(:target, :body, :scope)
         MethodDefinition = Data.define(:target, :name, :parameters, :body, :scope)
         NativeDefinition = Data.define(:name, :function, :signature)
+        Call = Data.define(:receiver, :name, :arguments, :block, :safe_navigation)
+        SuperCall = Data.define(:arguments, :block)
+        YieldCall = Data.define(:arguments)
+        PrimitiveCall = Data.define(:name, :arguments)
+        Arguments = Data.define(:positionals, :keywords, :forwarding)
+        KeywordArgument = Data.define(:name, :value)
+        BlockArgument = Data.define(:kind, :value)
         Parameters = Data.define(:positionals, :keywords, :block, :forwarding, :trailing_comma)
         Parameter = Data.define(:kind, :variable, :default)
+        Block = Data.define(:parameters, :body, :scope)
+        Lambda = Data.define(:parameters, :body, :scope)
         LocalRead = Data.define(:variable)
         ConstantReference = Data.define(:form, :parent, :name, :lexical_scope)
         SelfReference = Data.define
@@ -40,10 +49,22 @@ module BareRuby
                                           scope: :own_scope } },
           NativeDefinition => { name: :native_definition,
                                 fields: { name: :value, function: :value, signature: :value } },
+          Call => { name: :call,
+                    fields: { receiver: :optional_child, name: :value, arguments: :child, block: :optional_child,
+                              safe_navigation: :value } },
+          SuperCall => { name: :super_call, fields: { arguments: :optional_child, block: :optional_child } },
+          YieldCall => { name: :yield_call, fields: { arguments: :child } },
+          PrimitiveCall => { name: :primitive_call, fields: { name: :value, arguments: :child } },
+          Arguments => { name: :arguments,
+                         fields: { positionals: :children, keywords: :children, forwarding: :value } },
+          KeywordArgument => { name: :keyword_argument, fields: { name: :value, value: :child } },
+          BlockArgument => { name: :block_argument, fields: { kind: :value, value: :child } },
           Parameters => { name: :parameters,
                           fields: { positionals: :children, keywords: :children, block: :optional_child,
                                     forwarding: :value, trailing_comma: :value } },
           Parameter => { name: :parameter, fields: { kind: :value, variable: :variable, default: :optional_child } },
+          Block => { name: :block, fields: { parameters: :child, body: :child, scope: :own_scope } },
+          Lambda => { name: :lambda, fields: { parameters: :child, body: :child, scope: :own_scope } },
           LocalRead => { name: :local_read, fields: { variable: :variable } },
           ConstantReference => { name: :constant_reference,
                                  fields: { form: :value, parent: :optional_child, name: :value,
@@ -104,11 +125,30 @@ module BareRuby
         end
 
         # rubocop:disable-next Metrics/ParameterLists -- the keywords are the node's fields, which a pass passes by name
+        def create_call(span:, receiver:, name:, arguments:, block:, safe_navigation:)
+          add(Call.new(receiver:, name:, arguments:, block:, safe_navigation:), span)
+        end
+
+        def create_super_call(span:, arguments:, block:) = add(SuperCall.new(arguments:, block:), span)
+        def create_yield_call(span:, arguments:) = add(YieldCall.new(arguments:), span)
+        def create_primitive_call(span:, name:, arguments:) = add(PrimitiveCall.new(name:, arguments:), span)
+
+        def create_arguments(span:, positionals:, keywords:, forwarding:)
+          add(Arguments.new(positionals:, keywords:, forwarding:), span)
+        end
+
+        def create_keyword_argument(span:, name:, value:) = add(KeywordArgument.new(name:, value:), span)
+        def create_block_argument(span:, kind:, value:) = add(BlockArgument.new(kind:, value:), span)
+
+        # rubocop:disable-next Metrics/ParameterLists -- the keywords are the node's fields, which a pass passes by name
         def create_parameters(span:, positionals:, keywords:, block:, forwarding:, trailing_comma:)
           add(Parameters.new(positionals:, keywords:, block:, forwarding:, trailing_comma:), span)
         end
 
         def create_parameter(span:, kind:, variable:, default:) = add(Parameter.new(kind:, variable:, default:), span)
+
+        def create_block(span:, parameters:, body:, scope:) = add(Block.new(parameters:, body:, scope:), span)
+        def create_lambda(span:, parameters:, body:, scope:) = add(Lambda.new(parameters:, body:, scope:), span)
 
         def create_local_read(span:, variable:) = add(LocalRead.new(variable:), span)
 
