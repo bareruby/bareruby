@@ -17,13 +17,12 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
   end
 
   describe "#inspect_text" do
-    subject do
-      sources.each { |source| brast.add_source(source) }
-      brast.inspect_text
-    end
+    subject { brast.inspect_text }
 
     let(:source_body) { brast.create_body(span:, statements: [statement], scope: top) }
     let(:sources) { [brast.create_source_unit(span:, path:, body: source_body, scope: top)] }
+
+    before { sources.each { |source| brast.add_source(source) } }
 
     let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
     let(:two) { brast.create_literal(span:, kind: :integer, value: 2) }
@@ -48,8 +47,8 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
     end
 
     context "with two source units" do
-      let!(:first_scope) { brast.create_scope(kind: :top_level, variable_parent: nil, lexical_parent: nil) }
-      let!(:second_scope) { brast.create_scope(kind: :top_level, variable_parent: nil, lexical_parent: nil) }
+      let(:first_scope) { brast.create_scope(kind: :top_level, variable_parent: nil, lexical_parent: nil) }
+      let(:second_scope) { brast.create_scope(kind: :top_level, variable_parent: nil, lexical_parent: nil) }
 
       let(:first_body) { brast.create_body(span:, statements: [], scope: first_scope) }
       let(:second_body) { brast.create_body(span:, statements: [], scope: second_scope) }
@@ -138,7 +137,7 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
     end
 
     context "with a read of a local variable" do
-      let!(:variable) { brast.declare_local(scope: top, name: :x, kind: :assignment) }
+      let(:variable) { brast.declare_local(scope: top, name: :x, kind: :assignment) }
 
       let(:statement) { brast.create_local_read(span:, variable:) }
 
@@ -176,7 +175,7 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
       let(:statement) { brast.create_assignment(span:, target:, value: one) }
 
       context "to a local variable" do
-        let!(:variable) { brast.declare_local(scope: top, name: :x, kind: :assignment) }
+        let(:variable) { brast.declare_local(scope: top, name: :x, kind: :assignment) }
 
         let(:target) { brast.create_local_target(span:, variable:) }
 
@@ -296,7 +295,7 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
     end
 
     context "with a definition in its own scope" do
-      let!(:scope) { brast.create_scope(kind:, variable_parent: nil, lexical_parent: top) }
+      let(:scope) { brast.create_scope(kind:, variable_parent: nil, lexical_parent: top) }
 
       let(:body) { brast.create_body(span:, statements: [], scope:) }
       let(:lexical_lookup) { { form: :lexical, parent: nil, lexical_scope: top } }
@@ -350,7 +349,7 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
     end
 
     context "with a method definition" do
-      let!(:scope) { brast.create_scope(kind: :method, variable_parent: nil, lexical_parent: top) }
+      let(:scope) { brast.create_scope(kind: :method, variable_parent: nil, lexical_parent: top) }
 
       let(:body) { brast.create_body(span:, statements: [], scope:) }
       let(:statement) { brast.create_method_definition(span:, target:, name: :m, parameters:, body:, scope:) }
@@ -371,19 +370,17 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
       end
 
       context "with required, optional, keyword and block parameters" do
-        let!(:a) { brast.declare_local(scope:, name: :a, kind: :parameter) }
-        let!(:b) { brast.declare_local(scope:, name: :b, kind: :parameter) }
-        let!(:k) { brast.declare_local(scope:, name: :k, kind: :parameter) }
-        let!(:blk) { brast.declare_local(scope:, name: :blk, kind: :parameter) }
+        let(:parameter_names) { %i[a b k blk] }
+        let(:ids) { parameter_names.to_h { |name| [name, brast.declare_local(scope:, name:, kind: :parameter)] } }
 
         let(:target) { nil }
 
-        let(:required) { brast.create_parameter(span:, kind: :required, variable: a, default: nil) }
-        let(:optional) { brast.create_parameter(span:, kind: :optional, variable: b, default: one) }
-        let(:keyword_required) { brast.create_parameter(span:, kind: :keyword_required, variable: k, default: nil) }
-        let(:block) { brast.create_parameter(span:, kind: :block, variable: blk, default: nil) }
+        let(:required) { brast.create_parameter(span:, kind: :required, variable: ids.fetch(:a), default: nil) }
+        let(:optional) { brast.create_parameter(span:, kind: :optional, variable: ids.fetch(:b), default: one) }
+        let(:keyword) { brast.create_parameter(span:, kind: :keyword_required, variable: ids.fetch(:k), default: nil) }
+        let(:block) { brast.create_parameter(span:, kind: :block, variable: ids.fetch(:blk), default: nil) }
         let(:positionals) { [required, optional] }
-        let(:keywords) { [keyword_required] }
+        let(:keywords) { [keyword] }
         let(:flags) { { forwarding: false, trailing_comma: false } }
         let(:parameters) { brast.create_parameters(span:, positionals:, keywords:, block:, **flags) }
 
@@ -446,7 +443,7 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
       let(:arguments) { brast.create_arguments(span:, positionals: [one], keywords:, forwarding: false) }
 
       context "on a safe navigation call with a block" do
-        let!(:scope) { brast.create_scope(kind: :block, variable_parent: top, lexical_parent: top) }
+        let(:scope) { brast.create_scope(kind: :block, variable_parent: top, lexical_parent: top) }
 
         let(:receiver) { brast.create_self_reference(span:) }
 
@@ -533,7 +530,7 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
     end
 
     context "with a lambda" do
-      let!(:scope) { brast.create_scope(kind: :lambda, variable_parent: top, lexical_parent: top) }
+      let(:scope) { brast.create_scope(kind: :lambda, variable_parent: top, lexical_parent: top) }
 
       let(:body) { brast.create_body(span:, statements: [], scope:) }
       let(:statement) { brast.create_lambda(span:, parameters: empty_parameters, body:, scope:) }
@@ -649,7 +646,7 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
     end
 
     context "with a for loop" do
-      let!(:variable) { brast.declare_local(scope: top, name: :i, kind: :for) }
+      let(:variable) { brast.declare_local(scope: top, name: :i, kind: :for) }
 
       let(:collection) { brast.create_self_reference(span:) }
       let(:body) { brast.create_body(span:, statements: [one], scope: top) }
@@ -698,7 +695,7 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
       let(:statement) { brast.create_exception_region(span:, body:, rescues:, alternative:, ensure_body:) }
 
       context "with a rescue variable, else and ensure" do
-        let!(:variable) { brast.declare_local(scope: top, name: :e, kind: :rescue) }
+        let(:variable) { brast.declare_local(scope: top, name: :e, kind: :rescue) }
 
         let(:three) { brast.create_literal(span:, kind: :integer, value: 3) }
         let(:four) { brast.create_literal(span:, kind: :integer, value: 4) }
