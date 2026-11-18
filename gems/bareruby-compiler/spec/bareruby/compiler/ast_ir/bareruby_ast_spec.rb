@@ -331,5 +331,128 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
 
       it { is_expected.to eq(expected_text) }
     end
+
+    context "with a safe navigation call that passes an argument and a block" do
+      let!(:scope) { brast.create_scope(kind: :block, variable_parent: top, lexical_parent: top) }
+
+      let(:receiver) { brast.create_self_reference(span:) }
+      let(:name) { :m }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:arguments) { brast.create_arguments(span:, positionals: [one], keywords: [], forwarding: false) }
+      let(:positionals) { [] }
+      let(:keywords) { [] }
+      let(:block) { nil }
+      let(:forwarding) { false }
+      let(:trailing_comma) { false }
+      let(:parameters) { brast.create_parameters(span:, positionals:, keywords:, block:, forwarding:, trailing_comma:) }
+      let(:body) { brast.create_body(span:, statements: [], scope:) }
+      let(:block_literal) { brast.create_block(span:, parameters:, body:, scope:) }
+      let(:passed_block) { brast.create_block_argument(span:, kind: :literal, value: block_literal) }
+      let(:safe_navigation) { true }
+      let(:statement) { brast.create_call(span:, receiver:, name:, arguments:, block: passed_block, safe_navigation:) }
+
+      let(:statements_text) { <<~TEXT }
+        call name=m safe_navigation=true @1
+          self_reference @1
+          arguments forwarding=false @1
+            literal kind=integer value=1 @1
+          block_argument kind=literal @1
+            block scope=1 @1
+              parameters forwarding=false trailing_comma=false @1
+              body scope=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a call that passes a positional and a keyword argument" do
+      let(:receiver) { nil }
+      let(:name) { :m }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:keyword) { brast.create_keyword_argument(span:, name: :k, value:) }
+      let(:arguments) { brast.create_arguments(span:, positionals: [one], keywords: [keyword], forwarding: false) }
+      let(:block) { nil }
+      let(:safe_navigation) { false }
+      let(:statement) { brast.create_call(span:, receiver:, name:, arguments:, block:, safe_navigation:) }
+
+      let(:statements_text) { <<~TEXT }
+        call name=m safe_navigation=false @1
+          arguments forwarding=false @1
+            literal kind=integer value=1 @1
+            keyword_argument name=k @1
+              literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a super call that passes an argument and a block with &" do
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:arguments) { brast.create_arguments(span:, positionals: [one], keywords: [], forwarding: false) }
+      let(:value) { brast.create_literal(span:, kind: :nil, value: nil) }
+      let(:block) { brast.create_block_argument(span:, kind: :expression, value:) }
+      let(:statement) { brast.create_super_call(span:, arguments:, block:) }
+
+      let(:statements_text) { <<~TEXT }
+        super_call @1
+          arguments forwarding=false @1
+            literal kind=integer value=1 @1
+          block_argument kind=expression @1
+            literal kind=nil value=nil @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a yield that passes an argument" do
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:arguments) { brast.create_arguments(span:, positionals: [one], keywords: [], forwarding: false) }
+      let(:statement) { brast.create_yield_call(span:, arguments:) }
+
+      let(:statements_text) { <<~TEXT }
+        yield_call @1
+          arguments forwarding=false @1
+            literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a primitive call that passes an argument" do
+      let(:name) { :new_instance }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:arguments) { brast.create_arguments(span:, positionals: [one], keywords: [], forwarding: false) }
+      let(:statement) { brast.create_primitive_call(span:, name:, arguments:) }
+
+      let(:statements_text) { <<~TEXT }
+        primitive_call name=new_instance @1
+          arguments forwarding=false @1
+            literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a lambda" do
+      let!(:scope) { brast.create_scope(kind: :lambda, variable_parent: top, lexical_parent: top) }
+
+      let(:positionals) { [] }
+      let(:keywords) { [] }
+      let(:block) { nil }
+      let(:forwarding) { false }
+      let(:trailing_comma) { false }
+      let(:parameters) { brast.create_parameters(span:, positionals:, keywords:, block:, forwarding:, trailing_comma:) }
+      let(:body) { brast.create_body(span:, statements: [], scope:) }
+      let(:statement) { brast.create_lambda(span:, parameters:, body:, scope:) }
+
+      let(:statements_text) { <<~TEXT }
+        lambda scope=1 @1
+          parameters forwarding=false trailing_comma=false @1
+          body scope=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
   end
 end
