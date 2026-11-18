@@ -454,5 +454,145 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
 
       it { is_expected.to eq(expected_text) }
     end
+
+    context "with a read of an instance variable" do
+      let(:name) { :@a }
+      let(:statement) { brast.create_instance_variable_read(span:, name:) }
+
+      let(:statements_text) { <<~TEXT }
+        instance_variable_read name=@a @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a read of a class variable" do
+      let(:name) { :@@a }
+      let(:statement) { brast.create_class_variable_read(span:, name:) }
+
+      let(:statements_text) { <<~TEXT }
+        class_variable_read name=@@a @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an assignment to an instance variable" do
+      let(:name) { :@a }
+      let(:target) { brast.create_instance_variable_target(span:, name:) }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:statement) { brast.create_assignment(span:, target:, value:) }
+
+      let(:statements_text) { <<~TEXT }
+        assignment @1
+          instance_variable_target name=@a @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an assignment to a class variable" do
+      let(:name) { :@@a }
+      let(:target) { brast.create_class_variable_target(span:, name:) }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:statement) { brast.create_assignment(span:, target:, value:) }
+
+      let(:statements_text) { <<~TEXT }
+        assignment @1
+          class_variable_target name=@@a @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an assignment to a constant" do
+      let(:form) { :lexical }
+      let(:parent) { nil }
+      let(:name) { :A }
+      let(:lexical_scope) { top }
+      let(:constant) { brast.create_constant_reference(span:, form:, parent:, name:, lexical_scope:) }
+      let(:target) { brast.create_constant_target(span:, constant:) }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:statement) { brast.create_assignment(span:, target:, value:) }
+
+      let(:statements_text) { <<~TEXT }
+        assignment @1
+          constant_target @1
+            constant_reference form=lexical name=A lexical_scope=0 @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an assignment to an attribute" do
+      let(:receiver) { brast.create_self_reference(span:) }
+      let(:name) { :a }
+      let(:safe_navigation) { false }
+      let(:target) { brast.create_attribute_target(span:, receiver:, name:, safe_navigation:) }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:statement) { brast.create_assignment(span:, target:, value:) }
+
+      let(:statements_text) { <<~TEXT }
+        assignment @1
+          attribute_target name=a safe_navigation=false @1
+            self_reference @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an assignment to an index" do
+      let(:receiver) { brast.create_self_reference(span:) }
+      let(:zero) { brast.create_literal(span:, kind: :integer, value: 0) }
+      let(:arguments) { brast.create_arguments(span:, positionals: [zero], keywords: [], forwarding: false) }
+      let(:target) { brast.create_index_target(span:, receiver:, arguments:) }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:statement) { brast.create_assignment(span:, target:, value:) }
+
+      let(:statements_text) { <<~TEXT }
+        assignment @1
+          index_target @1
+            self_reference @1
+            arguments forwarding=false @1
+              literal kind=integer value=0 @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a compound assignment" do
+      let(:target) { brast.create_instance_variable_target(span:, name: :@a) }
+      let(:operator) { :+ }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:statement) { brast.create_compound_assignment(span:, target:, operator:, value:) }
+
+      let(:statements_text) { <<~TEXT }
+        compound_assignment operator=+ @1
+          instance_variable_target name=@a @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a logical assignment" do
+      let(:target) { brast.create_instance_variable_target(span:, name: :@a) }
+      let(:operator) { :or }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:statement) { brast.create_logical_assignment(span:, target:, operator:, value:) }
+
+      let(:statements_text) { <<~TEXT }
+        logical_assignment operator=or @1
+          instance_variable_target name=@a @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
   end
 end
