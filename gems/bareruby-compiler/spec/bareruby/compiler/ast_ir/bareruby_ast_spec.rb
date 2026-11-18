@@ -594,5 +594,149 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
 
       it { is_expected.to eq(expected_text) }
     end
+
+    context "with a conditional with both branches" do
+      let(:condition) { brast.create_self_reference(span:) }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:two) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:consequent) { brast.create_body(span:, statements: [one], scope: top) }
+      let(:alternative) { brast.create_body(span:, statements: [two], scope: top) }
+      let(:statement) { brast.create_conditional(span:, condition:, consequent:, alternative:) }
+
+      let(:statements_text) { <<~TEXT }
+        conditional @1
+          self_reference @1
+          body scope=0 @1
+            literal kind=integer value=1 @1
+          body scope=0 @1
+            literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a conditional without branches" do
+      let(:condition) { brast.create_self_reference(span:) }
+      let(:consequent) { nil }
+      let(:alternative) { nil }
+      let(:statement) { brast.create_conditional(span:, condition:, consequent:, alternative:) }
+
+      let(:statements_text) { <<~TEXT }
+        conditional @1
+          self_reference @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an unless conditional with else" do
+      let(:condition) { brast.create_self_reference(span:) }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:two) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:body) { brast.create_body(span:, statements: [one], scope: top) }
+      let(:alternative) { brast.create_body(span:, statements: [two], scope: top) }
+      let(:statement) { brast.create_unless_conditional(span:, condition:, body:, alternative:) }
+
+      let(:statements_text) { <<~TEXT }
+        unless_conditional @1
+          self_reference @1
+          body scope=0 @1
+            literal kind=integer value=1 @1
+          body scope=0 @1
+            literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a case branch with else" do
+      let(:condition) { brast.create_self_reference(span:) }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:two) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:when_body) { brast.create_body(span:, statements: [one], scope: top) }
+      let(:when_clause) { brast.create_when_clause(span:, conditions: [condition], body: when_body) }
+      let(:whens) { [when_clause] }
+      let(:alternative) { brast.create_body(span:, statements: [two], scope: top) }
+      let(:statement) { brast.create_case_branch(span:, whens:, alternative:) }
+
+      let(:statements_text) { <<~TEXT }
+        case_branch @1
+          when_clause @1
+            self_reference @1
+            body scope=0 @1
+              literal kind=integer value=1 @1
+          body scope=0 @1
+            literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a short-circuit operator" do
+      let(:operator) { :and }
+      let(:left) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:right) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:statement) { brast.create_logical(span:, operator:, left:, right:) }
+
+      let(:statements_text) { <<~TEXT }
+        logical operator=and @1
+          literal kind=integer value=1 @1
+          literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a while loop" do
+      let(:kind) { :while }
+      let(:condition) { brast.create_self_reference(span:) }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:body) { brast.create_body(span:, statements: [one], scope: top) }
+      let(:test) { :before }
+      let(:statement) { brast.create_loop(span:, kind:, condition:, body:, test:) }
+
+      let(:statements_text) { <<~TEXT }
+        loop kind=while test=before @1
+          self_reference @1
+          body scope=0 @1
+            literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a for loop" do
+      let!(:variable) { brast.declare_local(scope: top, name: :i, kind: :for) }
+
+      let(:collection) { brast.create_self_reference(span:) }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:body) { brast.create_body(span:, statements: [one], scope: top) }
+      let(:statement) { brast.create_for_loop(span:, variable:, collection:, body:) }
+
+      let(:statements_text) { <<~TEXT }
+        for_loop variable=0(i) @1
+          self_reference @1
+          body scope=0 @1
+            literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a parenthesized sequence" do
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:two) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:body) { brast.create_body(span:, statements: [one, two], scope: top) }
+      let(:statement) { brast.create_sequence(span:, body:) }
+
+      let(:statements_text) { <<~TEXT }
+        sequence @1
+          body scope=0 @1
+            literal kind=integer value=1 @1
+            literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
   end
 end
