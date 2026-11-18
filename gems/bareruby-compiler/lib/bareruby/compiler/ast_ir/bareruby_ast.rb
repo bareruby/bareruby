@@ -8,6 +8,7 @@ module BareRuby
         Program = Data.define(:sources)
         SourceUnit = Data.define(:path, :body, :scope)
         Body = Data.define(:statements, :scope)
+        Sequence = Data.define(:body)
         ClassDefinition = Data.define(:name, :superclass, :body, :scope)
         ModuleDefinition = Data.define(:name, :body, :scope)
         SingletonClassDefinition = Data.define(:target, :body, :scope)
@@ -38,6 +39,13 @@ module BareRuby
         ConstantTarget = Data.define(:constant)
         AttributeTarget = Data.define(:receiver, :name, :safe_navigation)
         IndexTarget = Data.define(:receiver, :arguments)
+        Conditional = Data.define(:condition, :consequent, :alternative)
+        UnlessConditional = Data.define(:condition, :body, :alternative)
+        CaseBranch = Data.define(:whens, :alternative)
+        WhenClause = Data.define(:conditions, :body)
+        Logical = Data.define(:operator, :left, :right)
+        Loop = Data.define(:kind, :condition, :body, :test)
+        ForLoop = Data.define(:variable, :collection, :body)
         Literal = Data.define(:kind, :value)
 
         Span = Data.define(:path, :start_offset, :end_offset, :start_line, :start_column, :end_line, :end_column)
@@ -48,6 +56,7 @@ module BareRuby
           Program => { name: :program, fields: { sources: :children } },
           SourceUnit => { name: :source_unit, fields: { path: :value, body: :child, scope: :own_scope } },
           Body => { name: :body, fields: { statements: :children, scope: :scope } },
+          Sequence => { name: :sequence, fields: { body: :child } },
           ClassDefinition => { name: :class_definition,
                                fields: { name: :child, superclass: :optional_child, body: :child, scope: :own_scope } },
           ModuleDefinition => { name: :module_definition, fields: { name: :child, body: :child, scope: :own_scope } },
@@ -93,6 +102,15 @@ module BareRuby
           AttributeTarget => { name: :attribute_target,
                                fields: { receiver: :child, name: :value, safe_navigation: :value } },
           IndexTarget => { name: :index_target, fields: { receiver: :child, arguments: :child } },
+          Conditional => { name: :conditional,
+                           fields: { condition: :child, consequent: :optional_child, alternative: :optional_child } },
+          UnlessConditional => { name: :unless_conditional,
+                                 fields: { condition: :child, body: :optional_child, alternative: :optional_child } },
+          CaseBranch => { name: :case_branch, fields: { whens: :children, alternative: :optional_child } },
+          WhenClause => { name: :when_clause, fields: { conditions: :children, body: :child } },
+          Logical => { name: :logical, fields: { operator: :value, left: :child, right: :child } },
+          Loop => { name: :loop, fields: { kind: :value, condition: :child, body: :child, test: :value } },
+          ForLoop => { name: :for_loop, fields: { variable: :variable, collection: :child, body: :child } },
           Literal => { name: :literal, fields: { kind: :value, value: :value } }
         }.freeze
 
@@ -123,6 +141,7 @@ module BareRuby
 
         def create_source_unit(span:, path:, body:, scope:) = add(SourceUnit.new(path:, body:, scope:), span)
         def create_body(span:, statements:, scope:) = add(Body.new(statements:, scope:), span)
+        def create_sequence(span:, body:) = add(Sequence.new(body:), span)
 
         def create_class_definition(span:, name:, superclass:, body:, scope:)
           add(ClassDefinition.new(name:, superclass:, body:, scope:), span)
@@ -201,6 +220,27 @@ module BareRuby
         end
 
         def create_index_target(span:, receiver:, arguments:) = add(IndexTarget.new(receiver:, arguments:), span)
+
+        def create_conditional(span:, condition:, consequent:, alternative:)
+          add(Conditional.new(condition:, consequent:, alternative:), span)
+        end
+
+        def create_unless_conditional(span:, condition:, body:, alternative:)
+          add(UnlessConditional.new(condition:, body:, alternative:), span)
+        end
+
+        def create_case_branch(span:, whens:, alternative:) = add(CaseBranch.new(whens:, alternative:), span)
+        def create_when_clause(span:, conditions:, body:) = add(WhenClause.new(conditions:, body:), span)
+        def create_logical(span:, operator:, left:, right:) = add(Logical.new(operator:, left:, right:), span)
+
+        def create_loop(span:, kind:, condition:, body:, test:)
+          add(Loop.new(kind:, condition:, body:, test:), span)
+        end
+
+        def create_for_loop(span:, variable:, collection:, body:)
+          add(ForLoop.new(variable:, collection:, body:), span)
+        end
+
         def create_literal(span:, kind:, value:) = add(Literal.new(kind:, value:), span)
 
         def inspect_text
