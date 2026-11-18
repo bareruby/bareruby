@@ -738,5 +738,136 @@ RSpec.describe BareRuby::Compiler::ASTIR::BareRubyAST do
 
       it { is_expected.to eq(expected_text) }
     end
+
+    context "with a break that passes a value" do
+      let(:kind) { :break }
+      let(:value) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:statement) { brast.create_transfer(span:, kind:, value:) }
+
+      let(:statements_text) { <<~TEXT }
+        transfer kind=break @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an exception region with a rescue, else and ensure" do
+      let!(:variable) { brast.declare_local(scope: top, name: :e, kind: :rescue) }
+
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:two) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:three) { brast.create_literal(span:, kind: :integer, value: 3) }
+      let(:four) { brast.create_literal(span:, kind: :integer, value: 4) }
+      let(:body) { brast.create_body(span:, statements: [one], scope: top) }
+      let(:form) { :lexical }
+      let(:parent) { nil }
+      let(:name) { :StandardError }
+      let(:lexical_scope) { top }
+      let(:standard_error) { brast.create_constant_reference(span:, form:, parent:, name:, lexical_scope:) }
+      let(:exception_classes) { [standard_error] }
+      let(:rescue_body) { brast.create_body(span:, statements: [two], scope: top) }
+      let(:rescue_clause) { brast.create_rescue_clause(span:, exception_classes:, variable:, body: rescue_body) }
+      let(:rescues) { [rescue_clause] }
+      let(:alternative) { brast.create_body(span:, statements: [three], scope: top) }
+      let(:ensure_body) { brast.create_body(span:, statements: [four], scope: top) }
+      let(:statement) { brast.create_exception_region(span:, body:, rescues:, alternative:, ensure_body:) }
+
+      let(:statements_text) { <<~TEXT }
+        exception_region @1
+          body scope=0 @1
+            literal kind=integer value=1 @1
+          rescue_clause variable=0(e) @1
+            constant_reference form=lexical name=StandardError lexical_scope=0 @1
+            body scope=0 @1
+              literal kind=integer value=2 @1
+          body scope=0 @1
+            literal kind=integer value=3 @1
+          body scope=0 @1
+            literal kind=integer value=4 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a rescue clause without a variable" do
+      let(:body) { brast.create_body(span:, statements: [], scope: top) }
+      let(:exception_classes) { [] }
+      let(:variable) { nil }
+      let(:rescue_body) { brast.create_body(span:, statements: [], scope: top) }
+      let(:rescue_clause) { brast.create_rescue_clause(span:, exception_classes:, variable:, body: rescue_body) }
+      let(:rescues) { [rescue_clause] }
+      let(:alternative) { nil }
+      let(:ensure_body) { nil }
+      let(:statement) { brast.create_exception_region(span:, body:, rescues:, alternative:, ensure_body:) }
+
+      let(:statements_text) { <<~TEXT }
+        exception_region @1
+          body scope=0 @1
+          rescue_clause @1
+            body scope=0 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a rescue modifier" do
+      let(:expression) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:rescue_value) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:statement) { brast.create_rescue_modifier(span:, expression:, rescue_value:) }
+
+      let(:statements_text) { <<~TEXT }
+        rescue_modifier @1
+          literal kind=integer value=1 @1
+          literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an interpolated string" do
+      let(:text) { brast.create_literal(span:, kind: :string, value: "a".b.freeze) }
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:parts) { [text, one] }
+      let(:statement) { brast.create_interpolation(span:, parts:) }
+
+      let(:statements_text) { <<~TEXT }
+        interpolation @1
+          literal kind=string value="a" @1
+          literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an array literal" do
+      let(:one) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:two) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:elements) { [one, two] }
+      let(:statement) { brast.create_array_literal(span:, elements:) }
+
+      let(:statements_text) { <<~TEXT }
+        array_literal @1
+          literal kind=integer value=1 @1
+          literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a range literal" do
+      let(:low) { brast.create_literal(span:, kind: :integer, value: 1) }
+      let(:high) { brast.create_literal(span:, kind: :integer, value: 2) }
+      let(:exclusive) { false }
+      let(:statement) { brast.create_range_literal(span:, low:, high:, exclusive:) }
+
+      let(:statements_text) { <<~TEXT }
+        range_literal exclusive=false @1
+          literal kind=integer value=1 @1
+          literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
   end
 end
