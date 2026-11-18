@@ -5,133 +5,6 @@ module BareRuby
     module ASTIR
       # BRAST stays one class instead of builder, rewriter and analysis classes, so it grows with each node kind.
       class BareRubyAST # rubocop:disable Metrics/ClassLength
-        Program = Data.define(:sources)
-        SourceUnit = Data.define(:path, :body, :scope)
-        Body = Data.define(:statements, :scope)
-        Sequence = Data.define(:body)
-        ClassDefinition = Data.define(:name, :superclass, :body, :scope)
-        ModuleDefinition = Data.define(:name, :body, :scope)
-        SingletonClassDefinition = Data.define(:target, :body, :scope)
-        MethodDefinition = Data.define(:target, :name, :parameters, :body, :scope)
-        NativeDefinition = Data.define(:name, :function, :signature)
-        Call = Data.define(:receiver, :name, :arguments, :block, :safe_navigation)
-        SuperCall = Data.define(:arguments, :block)
-        YieldCall = Data.define(:arguments)
-        PrimitiveCall = Data.define(:name, :arguments)
-        Arguments = Data.define(:positionals, :keywords, :forwarding)
-        KeywordArgument = Data.define(:name, :value)
-        BlockArgument = Data.define(:kind, :value)
-        Parameters = Data.define(:positionals, :keywords, :block, :forwarding, :trailing_comma)
-        Parameter = Data.define(:kind, :variable, :default)
-        Block = Data.define(:parameters, :body, :scope)
-        Lambda = Data.define(:parameters, :body, :scope)
-        LocalRead = Data.define(:variable)
-        InstanceVariableRead = Data.define(:name)
-        ClassVariableRead = Data.define(:name)
-        ConstantReference = Data.define(:form, :parent, :name, :lexical_scope)
-        SelfReference = Data.define
-        Assignment = Data.define(:target, :value)
-        CompoundAssignment = Data.define(:target, :operator, :value)
-        LogicalAssignment = Data.define(:target, :operator, :value)
-        LocalTarget = Data.define(:variable)
-        InstanceVariableTarget = Data.define(:name)
-        ClassVariableTarget = Data.define(:name)
-        ConstantTarget = Data.define(:constant)
-        AttributeTarget = Data.define(:receiver, :name, :safe_navigation)
-        IndexTarget = Data.define(:receiver, :arguments)
-        Conditional = Data.define(:condition, :consequent, :alternative)
-        UnlessConditional = Data.define(:condition, :body, :alternative)
-        CaseBranch = Data.define(:whens, :alternative)
-        WhenClause = Data.define(:conditions, :body)
-        Logical = Data.define(:operator, :left, :right)
-        Loop = Data.define(:kind, :condition, :body, :test)
-        ForLoop = Data.define(:variable, :collection, :body)
-        Transfer = Data.define(:kind, :value)
-        ExceptionRegion = Data.define(:body, :rescues, :alternative, :ensure_body)
-        RescueClause = Data.define(:exception_classes, :variable, :body)
-        RescueModifier = Data.define(:expression, :rescue_value)
-        Literal = Data.define(:kind, :value)
-        Interpolation = Data.define(:parts)
-        ArrayLiteral = Data.define(:elements)
-        RangeLiteral = Data.define(:low, :high, :exclusive)
-
-        Span = Data.define(:path, :start_offset, :end_offset, :start_line, :start_column, :end_line, :end_column)
-        Scope = Data.define(:kind, :variable_parent, :lexical_parent)
-        Variable = Data.define(:name, :kind, :scope)
-
-        NODE_TYPES = {
-          Program => { name: :program, fields: { sources: :children } },
-          SourceUnit => { name: :source_unit, fields: { path: :value, body: :child, scope: :own_scope } },
-          Body => { name: :body, fields: { statements: :children, scope: :scope } },
-          Sequence => { name: :sequence, fields: { body: :child } },
-          ClassDefinition => { name: :class_definition,
-                               fields: { name: :child, superclass: :optional_child, body: :child, scope: :own_scope } },
-          ModuleDefinition => { name: :module_definition, fields: { name: :child, body: :child, scope: :own_scope } },
-          SingletonClassDefinition => { name: :singleton_class_definition,
-                                        fields: { target: :child, body: :child, scope: :own_scope } },
-          MethodDefinition => { name: :method_definition,
-                                fields: { target: :optional_child, name: :value, parameters: :child, body: :child,
-                                          scope: :own_scope } },
-          NativeDefinition => { name: :native_definition,
-                                fields: { name: :value, function: :value, signature: :value } },
-          Call => { name: :call,
-                    fields: { receiver: :optional_child, name: :value, arguments: :child, block: :optional_child,
-                              safe_navigation: :value } },
-          SuperCall => { name: :super_call, fields: { arguments: :optional_child, block: :optional_child } },
-          YieldCall => { name: :yield_call, fields: { arguments: :child } },
-          PrimitiveCall => { name: :primitive_call, fields: { name: :value, arguments: :child } },
-          Arguments => { name: :arguments,
-                         fields: { positionals: :children, keywords: :children, forwarding: :value } },
-          KeywordArgument => { name: :keyword_argument, fields: { name: :value, value: :child } },
-          BlockArgument => { name: :block_argument, fields: { kind: :value, value: :child } },
-          Parameters => { name: :parameters,
-                          fields: { positionals: :children, keywords: :children, block: :optional_child,
-                                    forwarding: :value, trailing_comma: :value } },
-          Parameter => { name: :parameter, fields: { kind: :value, variable: :variable, default: :optional_child } },
-          Block => { name: :block, fields: { parameters: :child, body: :child, scope: :own_scope } },
-          Lambda => { name: :lambda, fields: { parameters: :child, body: :child, scope: :own_scope } },
-          LocalRead => { name: :local_read, fields: { variable: :variable } },
-          InstanceVariableRead => { name: :instance_variable_read, fields: { name: :value } },
-          ClassVariableRead => { name: :class_variable_read, fields: { name: :value } },
-          ConstantReference => { name: :constant_reference,
-                                 fields: { form: :value, parent: :optional_child, name: :value,
-                                           lexical_scope: :scope } },
-          SelfReference => { name: :self_reference, fields: {} },
-          Assignment => { name: :assignment, fields: { target: :child, value: :child } },
-          CompoundAssignment => { name: :compound_assignment,
-                                  fields: { target: :child, operator: :value, value: :child } },
-          LogicalAssignment => { name: :logical_assignment,
-                                 fields: { target: :child, operator: :value, value: :child } },
-          LocalTarget => { name: :local_target, fields: { variable: :variable } },
-          InstanceVariableTarget => { name: :instance_variable_target, fields: { name: :value } },
-          ClassVariableTarget => { name: :class_variable_target, fields: { name: :value } },
-          ConstantTarget => { name: :constant_target, fields: { constant: :child } },
-          AttributeTarget => { name: :attribute_target,
-                               fields: { receiver: :child, name: :value, safe_navigation: :value } },
-          IndexTarget => { name: :index_target, fields: { receiver: :child, arguments: :child } },
-          Conditional => { name: :conditional,
-                           fields: { condition: :child, consequent: :optional_child, alternative: :optional_child } },
-          UnlessConditional => { name: :unless_conditional,
-                                 fields: { condition: :child, body: :optional_child, alternative: :optional_child } },
-          CaseBranch => { name: :case_branch, fields: { whens: :children, alternative: :optional_child } },
-          WhenClause => { name: :when_clause, fields: { conditions: :children, body: :child } },
-          Logical => { name: :logical, fields: { operator: :value, left: :child, right: :child } },
-          Loop => { name: :loop, fields: { kind: :value, condition: :child, body: :child, test: :value } },
-          ForLoop => { name: :for_loop, fields: { variable: :variable, collection: :child, body: :child } },
-          Transfer => { name: :transfer, fields: { kind: :value, value: :optional_child } },
-          ExceptionRegion => { name: :exception_region,
-                               fields: { body: :child, rescues: :children, alternative: :optional_child,
-                                         ensure_body: :optional_child } },
-          RescueClause => { name: :rescue_clause,
-                            fields: { exception_classes: :children, variable: :variable, body: :child } },
-          RescueModifier => { name: :rescue_modifier, fields: { expression: :child, rescue_value: :child } },
-          Literal => { name: :literal, fields: { kind: :value, value: :value } },
-          Interpolation => { name: :interpolation, fields: { parts: :children } },
-          ArrayLiteral => { name: :array_literal, fields: { elements: :children } },
-          RangeLiteral => { name: :range_literal,
-                            fields: { low: :optional_child, high: :optional_child, exclusive: :value } }
-        }.freeze
-
         def initialize
           @nodes = []
           @spans = []
@@ -139,6 +12,18 @@ module BareRuby
           @scopes = []
           @variables = []
           @root = add(Program.new(sources: []), nil)
+        end
+
+        def add_source(source_unit)
+          program = @nodes[@root]
+          @root = add(program.with(sources: program.sources + [source_unit]), nil)
+          self
+        end
+
+        def inspect_text
+          lines = []
+          inspect_node(@root, 0, lines)
+          "#{lines.join("\n")}\n"
         end
 
         def create_scope(kind:, variable_parent:, lexical_parent:)
@@ -149,12 +34,6 @@ module BareRuby
         def declare_local(scope:, name:, kind:)
           @variables << Variable.new(name:, kind:, scope:)
           @variables.size - 1
-        end
-
-        def add_source(source_unit)
-          program = @nodes[@root]
-          @root = add(program.with(sources: program.sources + [source_unit]), nil)
-          self
         end
 
         def create_source_unit(span:, path:, body:, scope:) = add(SourceUnit.new(path:, body:, scope:), span)
@@ -281,12 +160,6 @@ module BareRuby
           add(RangeLiteral.new(low:, high:, exclusive:), span)
         end
 
-        def inspect_text
-          lines = []
-          inspect_node(@root, 0, lines)
-          "#{lines.join("\n")}\n"
-        end
-
         private
 
         def add(node, span)
@@ -336,6 +209,135 @@ module BareRuby
           else value.inspect
           end
         end
+      end
+
+      class BareRubyAST # rubocop:disable Metrics/ClassLength
+        Program = Data.define(:sources)
+        SourceUnit = Data.define(:path, :body, :scope)
+        Body = Data.define(:statements, :scope)
+        Sequence = Data.define(:body)
+        ClassDefinition = Data.define(:name, :superclass, :body, :scope)
+        ModuleDefinition = Data.define(:name, :body, :scope)
+        SingletonClassDefinition = Data.define(:target, :body, :scope)
+        MethodDefinition = Data.define(:target, :name, :parameters, :body, :scope)
+        NativeDefinition = Data.define(:name, :function, :signature)
+        Call = Data.define(:receiver, :name, :arguments, :block, :safe_navigation)
+        SuperCall = Data.define(:arguments, :block)
+        YieldCall = Data.define(:arguments)
+        PrimitiveCall = Data.define(:name, :arguments)
+        Arguments = Data.define(:positionals, :keywords, :forwarding)
+        KeywordArgument = Data.define(:name, :value)
+        BlockArgument = Data.define(:kind, :value)
+        Parameters = Data.define(:positionals, :keywords, :block, :forwarding, :trailing_comma)
+        Parameter = Data.define(:kind, :variable, :default)
+        Block = Data.define(:parameters, :body, :scope)
+        Lambda = Data.define(:parameters, :body, :scope)
+        LocalRead = Data.define(:variable)
+        InstanceVariableRead = Data.define(:name)
+        ClassVariableRead = Data.define(:name)
+        ConstantReference = Data.define(:form, :parent, :name, :lexical_scope)
+        SelfReference = Data.define
+        Assignment = Data.define(:target, :value)
+        CompoundAssignment = Data.define(:target, :operator, :value)
+        LogicalAssignment = Data.define(:target, :operator, :value)
+        LocalTarget = Data.define(:variable)
+        InstanceVariableTarget = Data.define(:name)
+        ClassVariableTarget = Data.define(:name)
+        ConstantTarget = Data.define(:constant)
+        AttributeTarget = Data.define(:receiver, :name, :safe_navigation)
+        IndexTarget = Data.define(:receiver, :arguments)
+        Conditional = Data.define(:condition, :consequent, :alternative)
+        UnlessConditional = Data.define(:condition, :body, :alternative)
+        CaseBranch = Data.define(:whens, :alternative)
+        WhenClause = Data.define(:conditions, :body)
+        Logical = Data.define(:operator, :left, :right)
+        Loop = Data.define(:kind, :condition, :body, :test)
+        ForLoop = Data.define(:variable, :collection, :body)
+        Transfer = Data.define(:kind, :value)
+        ExceptionRegion = Data.define(:body, :rescues, :alternative, :ensure_body)
+        RescueClause = Data.define(:exception_classes, :variable, :body)
+        RescueModifier = Data.define(:expression, :rescue_value)
+        Literal = Data.define(:kind, :value)
+        Interpolation = Data.define(:parts)
+        ArrayLiteral = Data.define(:elements)
+        RangeLiteral = Data.define(:low, :high, :exclusive)
+
+        Span = Data.define(:path, :start_offset, :end_offset, :start_line, :start_column, :end_line, :end_column)
+        Scope = Data.define(:kind, :variable_parent, :lexical_parent)
+        Variable = Data.define(:name, :kind, :scope)
+
+        NODE_TYPES = {
+          Program => { name: :program, fields: { sources: :children } },
+          SourceUnit => { name: :source_unit, fields: { path: :value, body: :child, scope: :own_scope } },
+          Body => { name: :body, fields: { statements: :children, scope: :scope } },
+          Sequence => { name: :sequence, fields: { body: :child } },
+          ClassDefinition => { name: :class_definition,
+                               fields: { name: :child, superclass: :optional_child, body: :child, scope: :own_scope } },
+          ModuleDefinition => { name: :module_definition, fields: { name: :child, body: :child, scope: :own_scope } },
+          SingletonClassDefinition => { name: :singleton_class_definition,
+                                        fields: { target: :child, body: :child, scope: :own_scope } },
+          MethodDefinition => { name: :method_definition,
+                                fields: { target: :optional_child, name: :value, parameters: :child, body: :child,
+                                          scope: :own_scope } },
+          NativeDefinition => { name: :native_definition,
+                                fields: { name: :value, function: :value, signature: :value } },
+          Call => { name: :call,
+                    fields: { receiver: :optional_child, name: :value, arguments: :child, block: :optional_child,
+                              safe_navigation: :value } },
+          SuperCall => { name: :super_call, fields: { arguments: :optional_child, block: :optional_child } },
+          YieldCall => { name: :yield_call, fields: { arguments: :child } },
+          PrimitiveCall => { name: :primitive_call, fields: { name: :value, arguments: :child } },
+          Arguments => { name: :arguments,
+                         fields: { positionals: :children, keywords: :children, forwarding: :value } },
+          KeywordArgument => { name: :keyword_argument, fields: { name: :value, value: :child } },
+          BlockArgument => { name: :block_argument, fields: { kind: :value, value: :child } },
+          Parameters => { name: :parameters,
+                          fields: { positionals: :children, keywords: :children, block: :optional_child,
+                                    forwarding: :value, trailing_comma: :value } },
+          Parameter => { name: :parameter, fields: { kind: :value, variable: :variable, default: :optional_child } },
+          Block => { name: :block, fields: { parameters: :child, body: :child, scope: :own_scope } },
+          Lambda => { name: :lambda, fields: { parameters: :child, body: :child, scope: :own_scope } },
+          LocalRead => { name: :local_read, fields: { variable: :variable } },
+          InstanceVariableRead => { name: :instance_variable_read, fields: { name: :value } },
+          ClassVariableRead => { name: :class_variable_read, fields: { name: :value } },
+          ConstantReference => { name: :constant_reference,
+                                 fields: { form: :value, parent: :optional_child, name: :value,
+                                           lexical_scope: :scope } },
+          SelfReference => { name: :self_reference, fields: {} },
+          Assignment => { name: :assignment, fields: { target: :child, value: :child } },
+          CompoundAssignment => { name: :compound_assignment,
+                                  fields: { target: :child, operator: :value, value: :child } },
+          LogicalAssignment => { name: :logical_assignment,
+                                 fields: { target: :child, operator: :value, value: :child } },
+          LocalTarget => { name: :local_target, fields: { variable: :variable } },
+          InstanceVariableTarget => { name: :instance_variable_target, fields: { name: :value } },
+          ClassVariableTarget => { name: :class_variable_target, fields: { name: :value } },
+          ConstantTarget => { name: :constant_target, fields: { constant: :child } },
+          AttributeTarget => { name: :attribute_target,
+                               fields: { receiver: :child, name: :value, safe_navigation: :value } },
+          IndexTarget => { name: :index_target, fields: { receiver: :child, arguments: :child } },
+          Conditional => { name: :conditional,
+                           fields: { condition: :child, consequent: :optional_child, alternative: :optional_child } },
+          UnlessConditional => { name: :unless_conditional,
+                                 fields: { condition: :child, body: :optional_child, alternative: :optional_child } },
+          CaseBranch => { name: :case_branch, fields: { whens: :children, alternative: :optional_child } },
+          WhenClause => { name: :when_clause, fields: { conditions: :children, body: :child } },
+          Logical => { name: :logical, fields: { operator: :value, left: :child, right: :child } },
+          Loop => { name: :loop, fields: { kind: :value, condition: :child, body: :child, test: :value } },
+          ForLoop => { name: :for_loop, fields: { variable: :variable, collection: :child, body: :child } },
+          Transfer => { name: :transfer, fields: { kind: :value, value: :optional_child } },
+          ExceptionRegion => { name: :exception_region,
+                               fields: { body: :child, rescues: :children, alternative: :optional_child,
+                                         ensure_body: :optional_child } },
+          RescueClause => { name: :rescue_clause,
+                            fields: { exception_classes: :children, variable: :variable, body: :child } },
+          RescueModifier => { name: :rescue_modifier, fields: { expression: :child, rescue_value: :child } },
+          Literal => { name: :literal, fields: { kind: :value, value: :value } },
+          Interpolation => { name: :interpolation, fields: { parts: :children } },
+          ArrayLiteral => { name: :array_literal, fields: { elements: :children } },
+          RangeLiteral => { name: :range_literal,
+                            fields: { low: :optional_child, high: :optional_child, exclusive: :value } }
+        }.freeze
       end
     end
   end
