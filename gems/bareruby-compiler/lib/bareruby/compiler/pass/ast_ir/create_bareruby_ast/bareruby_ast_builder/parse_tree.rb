@@ -19,6 +19,8 @@ module BareRuby
               def root_node
                 @root_node ||= begin
                   scope = @bareruby_ast.create_scope(kind: :top_level, variable_parent: nil, lexical_parent: nil)
+                  names = @program_node.locals
+                  @locals = [names.to_h { [it, @bareruby_ast.declare_local(scope:, name: it, kind: :assignment)] }]
                   statements = @program_node.statements.body.map { node(it) }
                   body = @bareruby_ast.create_body(span: span(@program_node.statements.location), statements:, scope:)
                   @bareruby_ast.create_source_unit(span: span(@program_node.location), path: @path, body:, scope:)
@@ -27,7 +29,8 @@ module BareRuby
 
               private
 
-              # rubocop:disable-next Metrics/CyclomaticComplexity, Metrics/MethodLength -- one case covers every Prism node kind
+              # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity -- one case covers every Prism node kind
+              # rubocop:disable-next Metrics/MethodLength -- one case covers every Prism node kind
               def node(prism_node)
                 span = span(prism_node.location)
                 case prism_node
@@ -42,7 +45,19 @@ module BareRuby
                   @bareruby_ast.create_literal(span:, kind: :string, value: unescaped.b.freeze)
                 in Prism::SymbolNode[unescaped:]
                   @bareruby_ast.create_literal(span:, kind: :symbol, value: unescaped.to_sym)
+                in Prism::LocalVariableReadNode[name:, depth:]
+                  @bareruby_ast.create_local_read(span:, variable: variable(name, depth))
+                in Prism::LocalVariableWriteNode[value:]
+                  target = local_target(prism_node)
+                  @bareruby_ast.create_assignment(span:, target:, value: node(value))
                 end
+              end
+
+              def variable(name, depth) = @locals[-1 - depth].fetch(name)
+
+              def local_target(prism_node)
+                span = span(prism_node.name_loc)
+                @bareruby_ast.create_local_target(span:, variable: variable(prism_node.name, prism_node.depth))
               end
 
               def span(location)
