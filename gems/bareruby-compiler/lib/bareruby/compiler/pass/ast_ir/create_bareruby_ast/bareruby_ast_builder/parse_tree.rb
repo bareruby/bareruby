@@ -30,7 +30,7 @@ module BareRuby
               private
 
               # rubocop:disable-next Metrics/AbcSize, Metrics/CyclomaticComplexity -- one case covers every Prism node kind
-              # rubocop:disable-next Metrics/MethodLength -- one case covers every Prism node kind
+              # rubocop:disable-next Metrics/MethodLength, Metrics/PerceivedComplexity -- one case covers every Prism node kind
               def node(prism_node)
                 span = span(prism_node.location)
                 case prism_node
@@ -50,6 +50,15 @@ module BareRuby
                 in Prism::LocalVariableWriteNode[value:]
                   target = local_target(prism_node)
                   @bareruby_ast.create_assignment(span:, target:, value: node(value))
+                in Prism::LocalVariableOperatorWriteNode[binary_operator: operator, value:]
+                  target = local_target(prism_node)
+                  @bareruby_ast.create_compound_assignment(span:, target:, operator:, value: node(value))
+                in Prism::LocalVariableOrWriteNode[value:]
+                  target = local_target(prism_node)
+                  @bareruby_ast.create_logical_assignment(span:, target:, operator: :or, value: node(value))
+                in Prism::LocalVariableAndWriteNode[value:]
+                  target = local_target(prism_node)
+                  @bareruby_ast.create_logical_assignment(span:, target:, operator: :and, value: node(value))
                 end
               end
 
