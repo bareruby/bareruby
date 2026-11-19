@@ -59,6 +59,25 @@ module BareRuby
                 in Prism::LocalVariableAndWriteNode[value:]
                   target = local_target(prism_node)
                   @bareruby_ast.create_logical_assignment(span:, target:, operator: :and, value: node(value))
+                in Prism::CallNode[name:]
+                  receiver = prism_node.receiver && node(prism_node.receiver)
+                  arguments = arguments(prism_node.arguments, span)
+                  safe_navigation = prism_node.safe_navigation?
+                  @bareruby_ast.create_call(span:, receiver:, name:, arguments:, block: nil, safe_navigation:)
+                in Prism::AssocNode[key: Prism::SymbolNode[unescaped:], value:]
+                  @bareruby_ast.create_keyword_argument(span:, name: unescaped.to_sym, value: node(value))
+                end
+              end
+
+              def arguments(prism_node, call_span)
+                case prism_node
+                in nil
+                  @bareruby_ast.create_arguments(span: call_span, positionals: [], keywords: [], forwarding: false)
+                in Prism::ArgumentsNode[arguments:]
+                  positionals = arguments.grep_v(Prism::KeywordHashNode).map { node(it) }
+                  keywords = arguments.grep(Prism::KeywordHashNode).flat_map(&:elements).map { node(it) }
+                  span = span(prism_node.location)
+                  @bareruby_ast.create_arguments(span:, positionals:, keywords:, forwarding: false)
                 end
               end
 
