@@ -119,5 +119,41 @@ RSpec.describe BareRuby::Compiler::Pass::ASTIR::CreateBareRubyAST do
 
       it { is_expected.to eq(expected_text) }
     end
+
+    context "with an assignment to a local variable and a read of it" do
+      let(:source) { <<~RUBY }
+        x = 1
+        x
+      RUBY
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              assignment @1
+                local_target variable=0(x) @1
+                literal kind=integer value=1 @1
+              local_read variable=0(x) @2
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with assignments to two local variables" do
+      let(:source) { <<~RUBY }
+        x = 1
+        y = x
+      RUBY
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              assignment @1
+                local_target variable=0(x) @1
+                literal kind=integer value=1 @1
+              assignment @2
+                local_target variable=1(y) @2
+                local_read variable=0(x) @2
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
   end
 end
