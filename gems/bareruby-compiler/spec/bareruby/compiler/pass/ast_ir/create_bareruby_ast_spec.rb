@@ -194,5 +194,87 @@ RSpec.describe BareRuby::Compiler::Pass::ASTIR::CreateBareRubyAST do
 
       it { is_expected.to eq(expected_text) }
     end
+
+    context "with a call without a receiver or arguments" do
+      let(:source) { "m" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              call name=m safe_navigation=false @1
+                arguments forwarding=false @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a call with positional arguments" do
+      let(:source) { "m 1, 2" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              call name=m safe_navigation=false @1
+                arguments forwarding=false @1
+                  literal kind=integer value=1 @1
+                  literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a call with a receiver" do
+      let(:source) { "1.m(2)" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              call name=m safe_navigation=false @1
+                literal kind=integer value=1 @1
+                arguments forwarding=false @1
+                  literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a binary operator" do
+      let(:source) { "1 + 2" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              call name=+ safe_navigation=false @1
+                literal kind=integer value=1 @1
+                arguments forwarding=false @1
+                  literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a safe navigation call" do
+      let(:source) { "1&.m" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              call name=m safe_navigation=true @1
+                literal kind=integer value=1 @1
+                arguments forwarding=false @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with a call with a positional and a keyword argument" do
+      let(:source) { "m(1, a: 2)" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              call name=m safe_navigation=false @1
+                arguments forwarding=false @1
+                  literal kind=integer value=1 @1
+                  keyword_argument name=a @1
+                    literal kind=integer value=2 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
   end
 end
