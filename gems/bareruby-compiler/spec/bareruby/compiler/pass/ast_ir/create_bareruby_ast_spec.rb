@@ -155,5 +155,44 @@ RSpec.describe BareRuby::Compiler::Pass::ASTIR::CreateBareRubyAST do
 
       it { is_expected.to eq(expected_text) }
     end
+
+    context "with a compound assignment to a local variable" do
+      let(:source) { "x += 1" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              compound_assignment operator=+ @1
+                local_target variable=0(x) @1
+                literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an or-assignment to a local variable" do
+      let(:source) { "x ||= 1" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              logical_assignment operator=or @1
+                local_target variable=0(x) @1
+                literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
+
+    context "with an and-assignment to a local variable" do
+      let(:source) { "x &&= 1" }
+
+      let(:expected_text) { <<~TEXT }
+        #{source_header}
+              logical_assignment operator=and @1
+                local_target variable=0(x) @1
+                literal kind=integer value=1 @1
+      TEXT
+
+      it { is_expected.to eq(expected_text) }
+    end
   end
 end
