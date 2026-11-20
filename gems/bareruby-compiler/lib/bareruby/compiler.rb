@@ -2,6 +2,7 @@
 
 require_relative "compiler/version"
 require_relative "compiler/ast_ir/bareruby_ast"
+require_relative "compiler/pipeline"
 require_relative "compiler/compilation"
 
 module BareRuby
